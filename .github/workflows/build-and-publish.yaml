@@ -135,7 +135,6 @@ jobs:
             build-essential dpkg-dev apt-utils gnupg2 file
 
       - name: Build package
-        timeout-minutes: 20
         run: ./build-pkg.sh "${{ matrix.pkgdir }}"
 
       - name: Import signing key
