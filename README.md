@@ -39,6 +39,13 @@ A `DEBBUILD` declares:
   from the binaries `package()` installs
 - `build()` — same as in a PKGBUILD: build the software
 - `package()` — install the build output into `$pkgdir` (`$DESTDIR`-style)
+- `depends_exclude=()` / `provides` / `conflicts` / `replaces` / `preinst` /
+  `postinst` / `prerm` / `postrm` — see `build-pkg.sh`'s header comment
+
+> **KWin effect gotcha:** any package that does `find_package(KWin)` needs
+> `libdrm-dev`, `libvulkan-dev` and `pkg-config` in `builddepends` even if
+> its own code never touches them directly - `KWinConfig.cmake` pulls them
+> in transitively via `find_dependency()`, and CMake fails without them.
 
 ## Building a package
 

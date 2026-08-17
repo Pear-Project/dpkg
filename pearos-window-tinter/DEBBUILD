@@ -20,6 +20,9 @@ builddepends=(
     libkf6coreaddons-dev
     libkf6colorscheme-dev
     qt6-base-dev
+    libdrm-dev
+    libvulkan-dev
+    pkg-config
 )
 
 # Same libkwin6 split-package issue as pearos-magiclamp: not present under
