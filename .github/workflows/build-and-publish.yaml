@@ -20,13 +20,7 @@ jobs:
         run: |
           before="${{ github.event.before }}"
           if [[ -z "$before" ]] || [[ "$before" == "0000000000000000000000000000000000000000" ]]; then
-            before=$(git rev-parse HEAD~1 2>/dev/null || echo "")
-          fi
-
-          if [[ -z "$before" ]]; then
-            candidates=$(find . -maxdepth 2 -name DEBBUILD -printf '%h\n' | sed 's#^\./##' | sort -u)
-          else
-            candidates=$(git diff --name-only "$before" HEAD -- '*/DEBBUILD' | xargs -n1 dirname 2>/dev/null | sort -u)
+            before=$(git rev-parse --verify -q HEAD~1 2>/dev/null || echo "")
           fi
 
           read_version() {
@@ -38,32 +32,49 @@ jobs:
           }
 
           result=()
-          for dir in $candidates; do
-            [[ -f "$dir/DEBBUILD" ]] || continue
-            newcontents=$(cat "$dir/DEBBUILD")
-            newver=$(read_version "$newcontents") || { echo "Skip $dir: cannot parse new DEBBUILD" >&2; continue; }
 
-            oldcontents=$(git show "$before:$dir/DEBBUILD" 2>/dev/null || true)
-            if [[ -z "$oldcontents" ]]; then
-              echo "New package dir: $dir ($newver)"
+          if [[ -z "$before" ]]; then
+            # No usable prior commit (e.g. first push to a brand-new repo).
+            # `git show ":$dir/DEBBUILD"` would read the *current* index
+            # here instead of failing, so don't go through the diff path at
+            # all - just build everything that currently has a DEBBUILD.
+            candidates=$(find . -maxdepth 2 -name DEBBUILD -printf '%h\n' | sed 's#^\./##' | sort -u)
+            for dir in $candidates; do
+              [[ -f "$dir/DEBBUILD" ]] || continue
+              newcontents=$(cat "$dir/DEBBUILD")
+              newver=$(read_version "$newcontents") || { echo "Skip $dir: cannot parse DEBBUILD" >&2; continue; }
+              echo "New package dir (no prior commit to diff against): $dir ($newver)"
               result+=("$dir")
-              continue
-            fi
+            done
+          else
+            candidates=$(git diff --name-only "$before" HEAD -- '*/DEBBUILD' | xargs -n1 dirname 2>/dev/null | sort -u)
+            for dir in $candidates; do
+              [[ -f "$dir/DEBBUILD" ]] || continue
+              newcontents=$(cat "$dir/DEBBUILD")
+              newver=$(read_version "$newcontents") || { echo "Skip $dir: cannot parse new DEBBUILD" >&2; continue; }
 
-            oldver=$(read_version "$oldcontents") || { echo "Skip $dir: cannot parse old DEBBUILD" >&2; continue; }
+              oldcontents=$(git show "$before:$dir/DEBBUILD" 2>/dev/null || true)
+              if [[ -z "$oldcontents" ]]; then
+                echo "New package dir: $dir ($newver)"
+                result+=("$dir")
+                continue
+              fi
 
-            if [[ "$newver" == "$oldver" ]]; then
-              echo "Skip $dir: version unchanged ($newver)"
-              continue
-            fi
+              oldver=$(read_version "$oldcontents") || { echo "Skip $dir: cannot parse old DEBBUILD" >&2; continue; }
 
-            if dpkg --compare-versions "$newver" gt "$oldver"; then
-              echo "Bumped: $dir ($oldver -> $newver)"
-              result+=("$dir")
-            else
-              echo "Skip $dir: version did not increase ($oldver -> $newver)"
-            fi
-          done
+              if [[ "$newver" == "$oldver" ]]; then
+                echo "Skip $dir: version unchanged ($newver)"
+                continue
+              fi
+
+              if dpkg --compare-versions "$newver" gt "$oldver"; then
+                echo "Bumped: $dir ($oldver -> $newver)"
+                result+=("$dir")
+              else
+                echo "Skip $dir: version did not increase ($oldver -> $newver)"
+              fi
+            done
+          fi
 
           json=$(printf '%s\n' "${result[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "Package dirs to build:"
