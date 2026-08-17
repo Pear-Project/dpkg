@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+# Generic .deb builder, played the same role makepkg plays for PKGBUILD.
+#
+# Usage: ./build-pkg.sh <package-dir>
+#
+# Reads <package-dir>/DEBBUILD, a bash file declaring:
+#   pkgname, pkgver, pkgrel, pkgdesc, arch, url, license, section, priority
+#   builddepends=()   packages needed only to build (installed via apt, not
+#                      recorded in the .deb)
+#   depends=()        extra runtime deps to force in addition to whatever
+#                      dpkg-shlibdeps auto-detects from linked libraries
+#   build()           runs with $startdir/$srcdir available, produces a build
+#   package()         installs the built output into $pkgdir
+#
+# Output: <package-dir>/<pkgname>_<pkgver>-<pkgrel>_<arch>.deb
+
+set -euo pipefail
+
+nc='\033[0m'
+red='\033[0;31m'
+green='\033[0;32m'
+yellow='\033[1;33m'
+white='\033[1;37m'
+ul='\033[4m'
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $(basename "$0") <package-dir>" >&2
+    exit 1
+fi
+
+startdir="$(cd "$1" && pwd)"
+debbuild="$startdir/DEBBUILD"
+
+if [[ ! -f "$debbuild" ]]; then
+    echo -e "${red}[ERROR]${nc} No DEBBUILD found in $startdir" >&2
+    exit 1
+fi
+
+# ── Load package metadata ────────────────────────────────────────────────────
+
+builddepends=()
+depends=()
+arch=()
+pkgrel=1
+license=""
+section="misc"
+priority="optional"
+url=""
+
+# shellcheck source=/dev/null
+source "$debbuild"
+
+: "${pkgname:?DEBBUILD must set pkgname}"
+: "${pkgver:?DEBBUILD must set pkgver}"
+: "${pkgdesc:?DEBBUILD must set pkgdesc}"
+
+if [[ ${#arch[@]} -eq 0 ]]; then
+    arch=("$(dpkg --print-architecture)")
+fi
+build_arch="${arch[0]}"
+
+builddir="$startdir/.dpkgbuild"
+srcdir="$builddir/src"
+pkgdir="$builddir/pkg"
+
+rm -rf "$srcdir" "$pkgdir"
+mkdir -p "$srcdir" "$pkgdir"
+
+# ── Build dependencies ───────────────────────────────────────────────────────
+
+if [[ ${#builddepends[@]} -gt 0 ]]; then
+    echo -e "\n${ul}${white}Checking build dependencies${nc}\n"
+    missing=()
+    for pkg in "${builddepends[@]}"; do
+        if dpkg -s "$pkg" &>/dev/null; then
+            echo -e "  ${green}[OK]${nc} $pkg"
+        else
+            echo -e "  ${yellow}[MISSING]${nc} $pkg"
+            missing+=("$pkg")
+        fi
+    done
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        echo -e "\n${yellow}Installing missing build dependencies...${nc}\n"
+        if [[ "$EUID" -ne 0 ]]; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends "${missing[@]}"
+        else
+            apt-get update
+            apt-get install -y --no-install-recommends "${missing[@]}"
+        fi
+    fi
+fi
+
+# ── build() ───────────────────────────────────────────────────────────────────
+
+echo -e "\n${ul}${white}Building $pkgname $pkgver-$pkgrel ($build_arch)${nc}\n"
+
+type build &>/dev/null || { echo -e "${red}[ERROR]${nc} DEBBUILD has no build() function" >&2; exit 1; }
+( cd "$startdir" && build )
+
+# ── package() ─────────────────────────────────────────────────────────────────
+
+type package &>/dev/null || { echo -e "${red}[ERROR]${nc} DEBBUILD has no package() function" >&2; exit 1; }
+( cd "$startdir" && package )
+
+mkdir -p "$pkgdir/DEBIAN"
+
+# ── Auto-detect shared library deps ─────────────────────────────────────────
+
+shlibs_depends=""
+if command -v dpkg-shlibdeps &>/dev/null && command -v file &>/dev/null; then
+    mapfile -t elf_files < <(find "$pkgdir" -type f -exec sh -c 'file -b "$1" | grep -q ELF' _ {} \; -print 2>/dev/null)
+    if [[ ${#elf_files[@]} -gt 0 ]]; then
+        # dpkg-shlibdeps insists on running from a source root with debian/control
+        # present, even in -O (stdout) mode. Fake a minimal one.
+        mkdir -p "$builddir/debian"
+        {
+            echo "Source: $pkgname"
+            echo "Priority: $priority"
+            echo "Maintainer: ${maintainer:-Alexandru Balan <alxb421@gmail.com>}"
+            echo ""
+            echo "Package: $pkgname"
+            echo "Architecture: $build_arch"
+            echo "Description: $pkgdesc"
+        } > "$builddir/debian/control"
+
+        shlibs_out="$(cd "$builddir" && dpkg-shlibdeps -O --ignore-missing-info "${elf_files[@]}" 2>&1)" && {
+            shlibs_depends="$(printf '%s\n' "$shlibs_out" | sed -n 's/^shlibs:Depends=//p')"
+        } || {
+            echo -e "${yellow}[WARN]${nc} dpkg-shlibdeps could not resolve all library deps; falling back to manual depends[] only." >&2
+            echo "$shlibs_out" >&2
+        }
+    fi
+else
+    echo -e "${yellow}[WARN]${nc} dpkg-shlibdeps and/or file not found (install dpkg-dev, file) - only manual depends[] will be recorded." >&2
+fi
+
+all_depends="$shlibs_depends"
+if [[ ${#depends[@]} -gt 0 ]]; then
+    manual_depends="$(IFS=,; echo "${depends[*]}")"
+    if [[ -n "$all_depends" ]]; then
+        all_depends="$all_depends, $manual_depends"
+    else
+        all_depends="$manual_depends"
+    fi
+fi
+
+# ── DEBIAN/control ───────────────────────────────────────────────────────────
+
+installed_size="$(du -sk "$pkgdir" --exclude=DEBIAN 2>/dev/null | cut -f1)"
+
+{
+    echo "Package: $pkgname"
+    echo "Version: $pkgver-$pkgrel"
+    echo "Section: $section"
+    echo "Priority: $priority"
+    echo "Architecture: $build_arch"
+    [[ -n "$all_depends" ]] && echo "Depends: $all_depends"
+    echo "Installed-Size: ${installed_size:-0}"
+    echo "Maintainer: ${maintainer:-Alexandru Balan <alxb421@gmail.com>}"
+    [[ -n "$url" ]] && echo "Homepage: $url"
+    echo "Description: $pkgdesc"
+} > "$pkgdir/DEBIAN/control"
+
+# ── Build the .deb ───────────────────────────────────────────────────────────
+
+deb_name="${pkgname}_${pkgver}-${pkgrel}_${build_arch}.deb"
+find "$pkgdir" -mindepth 1 -maxdepth 1 ! -name DEBIAN -exec chmod -R go-w {} +
+dpkg-deb --build --root-owner-group "$pkgdir" "$startdir/$deb_name"
+
+echo -e "\n${green}Built:${nc} $startdir/$deb_name\n"

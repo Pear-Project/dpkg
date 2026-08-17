@@ -1,0 +1,45 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-magiclamp
+pkgver=26.6
+pkgrel=1
+pkgdesc="KWin window minimization effect - Pearos Magic Lamp"
+arch=('amd64')
+url="https://github.com/koryboc/pearos-magiclamp"
+license="GPL-2"
+section="kde"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+# Build-only tools/headers; not recorded as runtime deps.
+builddepends=(
+    build-essential
+    cmake
+    extra-cmake-modules
+    kwin-dev
+    libkf6config-dev
+    libkf6configwidgets-dev
+    libkf6coreaddons-dev
+    libkf6kcmutils-dev
+    libkf6windowsystem-dev
+    qt6-base-dev
+    libdrm-dev
+    libvulkan-dev
+    pkg-config
+)
+
+# Extra runtime deps beyond what dpkg-shlibdeps auto-detects from the linked
+# .so files (e.g. things only loaded at runtime, not linked at build time).
+depends=(
+    kwin
+)
+
+build() {
+    cmake -S "$startdir" -B "$srcdir/build" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build "$srcdir/build" --parallel
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install "$srcdir/build"
+}

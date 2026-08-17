@@ -1,0 +1,4 @@
+*.deb
+.dpkgbuild/
+.gpg-passphrase
+rclone-*.log
