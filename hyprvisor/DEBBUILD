@@ -1,0 +1,37 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=hyprvisor
+pkgver=26.8
+pkgrel=1
+pkgdesc="GPU driver manager CLI + GTK GUI for pearOS, wrapping ubuntu-drivers"
+arch=('amd64')
+url="https://github.com/alxb421/hyprvisor"
+license="MIT"
+section="utils"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=(
+    build-essential
+    cmake
+)
+
+depends=(
+    ubuntu-drivers-common
+    hwdata
+    pciutils
+    python3
+    python3-gi
+    gir1.2-gtk-3.0
+    policykit-1
+)
+
+build() {
+    cmake -S "$startdir" -B "$srcdir/build" \
+        -DCMAKE_BUILD_TYPE=Release
+    cmake --build "$srcdir/build" --parallel
+}
+
+package() {
+    install -Dm755 "$srcdir/build/hyprvisor" "$pkgdir/usr/local/bin/hyprvisor"
+    install -Dm755 "$startdir/gui/hyprvisor-gui.py" "$pkgdir/usr/local/bin/hyprvisor-gui"
+}

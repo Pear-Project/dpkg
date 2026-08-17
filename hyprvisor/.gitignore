@@ -1,0 +1,5 @@
+/.vscode
+/build
+/.dpkgbuild
+*.deb
+__pycache__/
