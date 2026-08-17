@@ -1,0 +1,63 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=system-settings
+pkgver=26.7.0
+pkgrel=1
+pkgdesc="pearOS System Settings application (Qt6/QML)"
+arch=('amd64')
+url="https://pearos.xyz"
+license="GPL-3.0"
+section="utils"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=(
+    build-essential
+    cmake
+    qt6-base-dev
+    qt6-declarative-dev
+    qt6-5compat-dev
+    libkf6windowsystem-dev
+    libx11-dev
+)
+
+# fprintd/power-profiles-daemon/jq: same package names as Arch, called by
+# touchidmanager.cpp/batterymanager.cpp/pearID scripts via their CLI tools.
+# qt6-5compat: ships the Qt5Compat.GraphicalEffects QML module, loaded
+# dynamically at runtime -- dpkg-shlibdeps doesn't see that (only what's
+# directly linked), so it needs to be declared by hand. qt6-declarative
+# (QtQuick.Effects) IS auto-detected already, no manual entry needed for it.
+# piri-base (Arch-only bundled model data package) dropped: PiriManager
+# already handles the model being absent and offers to download it.
+depends=(
+    fprintd
+    power-profiles-daemon
+    jq
+    qt6-5compat
+)
+
+build() {
+    cmake -S "$startdir" -B "$srcdir/build" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build "$srcdir/build" --parallel
+}
+
+package() {
+    install -Dm755 "$srcdir/build/systemsettings1" "$pkgdir/usr/bin/systemsettings1"
+
+    install -d "$pkgdir/usr/share/extras/system-settings"
+    cp -r "$startdir/assets" "$pkgdir/usr/share/extras/system-settings/assets"
+    cp -r "$startdir/themeswitcher" "$pkgdir/usr/share/extras/system-settings/themeswitcher"
+    cp -r "$startdir/pearID" "$pkgdir/usr/share/extras/system-settings/pearID"
+    chmod +x "$pkgdir/usr/share/extras/system-settings/themeswitcher/kde-theme-switch.sh"
+    chmod +x "$pkgdir/usr/share/extras/system-settings/pearID/"*.sh
+
+    install -Dm644 "$startdir/pearos-systemsettings.desktop" \
+        "$pkgdir/usr/share/applications/pearos-systemsettings.desktop"
+
+    install -Dm644 "$startdir/license.txt" \
+        "$pkgdir/usr/share/licenses/system-settings/license.txt"
+
+    install -Dm644 "$startdir/hide-systemsettings.menu" \
+        "$pkgdir/etc/xdg/menus/applications-merged/hide-systemsettings.menu"
+}
