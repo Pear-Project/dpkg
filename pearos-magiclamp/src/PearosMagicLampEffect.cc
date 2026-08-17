@@ -385,6 +385,23 @@ void PearosMagicLampEffect::postPaintScreen()
     KWin::effects->postPaintScreen();
 }
 
+#ifdef KWIN_PAINTWINDOW_RETURNS_BOOL
+bool PearosMagicLampEffect::paintWindow(const KWin::RenderTarget& renderTarget,
+    const KWin::RenderViewport& viewport,
+    KWin::EffectWindow* w, int mask,
+    const KWin::Region& region,
+    KWin::WindowPaintData& data)
+{
+    auto it = m_animations.constFind(w);
+    if (it != m_animations.constEnd() && it->model.needsClip()) {
+        const KWin::Region clipLogical(it->model.clipRegion());
+        const KWin::Region clip = viewport.mapToDeviceCoordinatesAligned(clipLogical);
+        return KWin::effects->paintWindow(renderTarget, viewport, w, mask, clip, data);
+    }
+
+    return KWin::effects->paintWindow(renderTarget, viewport, w, mask, region, data);
+}
+#else
 void PearosMagicLampEffect::paintWindow(const KWin::RenderTarget& renderTarget,
     const KWin::RenderViewport& viewport,
     KWin::EffectWindow* w, int mask,
@@ -401,6 +418,7 @@ void PearosMagicLampEffect::paintWindow(const KWin::RenderTarget& renderTarget,
 
     KWin::effects->paintWindow(renderTarget, viewport, w, mask, region, data);
 }
+#endif
 
 void PearosMagicLampEffect::apply(KWin::EffectWindow* window, int mask, KWin::WindowPaintData& data, KWin::WindowQuadList& quads)
 {

@@ -54,9 +54,19 @@ public:
 #endif
     void postPaintScreen() override;
 
+    // KWin changed Effect::paintWindow() to return bool (whether the window
+    // was actually painted) instead of void. KWIN_PAINTWINDOW_RETURNS_BOOL is
+    // set by the CMake probe to match the installed KWin so `override` stays
+    // correct on both old and new KWin versions.
+#ifdef KWIN_PAINTWINDOW_RETURNS_BOOL
+    bool paintWindow(const KWin::RenderTarget& renderTarget, const KWin::RenderViewport& viewport,
+        KWin::EffectWindow* w, int mask, const KWin::Region& region,
+        KWin::WindowPaintData& data) override;
+#else
     void paintWindow(const KWin::RenderTarget& renderTarget, const KWin::RenderViewport& viewport,
         KWin::EffectWindow* w, int mask, const KWin::Region& region,
         KWin::WindowPaintData& data) override;
+#endif
 
     bool isActive() const override;
     int requestedEffectChainPosition() const override;
