@@ -1,0 +1,58 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-dock
+pkgver=26.6.10
+pkgrel=1
+pkgdesc="Tahoe-style dock for KDE Plasma 6"
+arch=('amd64')
+url="https://github.com/pearOS-ArchLinux/pearos-dock"
+license="GPL-2.0-or-later"
+section="kde"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+# Fork of Victor Calles' WaveTask plasmoid (see package/metadata.json).
+# Needs plasma-workspace-dev for the LibTaskManager/LibNotificationManager
+# CMake find modules it links against, and the libdrm-dev/libvulkan-dev/
+# pkg-config trio already established as a find_package(KWin) requirement
+# by pearos-magiclamp and friends, even though this plugin doesn't
+# currently link KWin::kwin directly.
+builddepends=(
+    build-essential
+    cmake
+    extra-cmake-modules
+    qt6-base-dev
+    qt6-declarative-dev
+    kwin-dev
+    libkf6i18n-dev
+    libkf6service-dev
+    libkf6windowsystem-dev
+    libkf6config-dev
+    libkf6configwidgets-dev
+    libkf6coreaddons-dev
+    libkf6notifications-dev
+    libkf6kio-dev
+    libkf6bookmarks-dev
+    libplasma-dev
+    libkf6activities-dev
+    plasma-activities-stats-dev
+    plasma-workspace-dev
+    libksysguard-dev
+    libdrm-dev
+    libvulkan-dev
+    pkg-config
+)
+
+depends=()
+
+build() {
+    cmake -S "$startdir" -B "$srcdir/build" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build "$srcdir/build" --parallel
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install "$srcdir/build"
+    install -dm755 "$pkgdir/usr/share/plasma/plasmoids/PearDock/contents/skins"
+    cp -r "$startdir/package/contents/skins/." "$pkgdir/usr/share/plasma/plasmoids/PearDock/contents/skins/"
+}

@@ -1,0 +1,23 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-icons
+pkgver=26.7.0
+pkgrel=1
+pkgdesc="Icons for pearOS"
+arch=('all')
+url="https://github.com/pearOS-archlinux/pearos-icons"
+license="GPL-3"
+section="misc"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=()
+depends=()
+
+build() {
+    :
+}
+
+package() {
+    mkdir -p "$pkgdir/usr"
+    cp -r "$startdir/usr/." "$pkgdir/usr/"
+}
