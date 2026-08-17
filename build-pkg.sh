@@ -109,6 +109,13 @@ fi
 
 echo -e "\n${ul}${white}Building $pkgname $pkgver-$pkgrel ($build_arch)${nc}\n"
 
+# Qt Quick's shader baker (qsb, invoked by qmlcachegen for QtQuick.Effects/
+# MultiEffect-based QML) tries to open a real GPU/display context unless
+# told otherwise, and hangs indefinitely instead of failing when none is
+# available (e.g. this headless CI container) -- offscreen makes it use a
+# software fallback instead of blocking forever. No effect on non-Qt builds.
+export QT_QPA_PLATFORM=offscreen
+
 type build &>/dev/null || { echo -e "${red}[ERROR]${nc} DEBBUILD has no build() function" >&2; exit 1; }
 ( cd "$startdir" && build )
 
