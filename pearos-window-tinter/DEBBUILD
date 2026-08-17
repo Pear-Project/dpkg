@@ -1,0 +1,50 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-window-tinter
+pkgver=26.8
+pkgrel=1
+pkgdesc="KWin effect that tints window backgrounds with the wallpaper color behind them"
+arch=('amd64')
+url="https://pearos.xyz"
+license="GPL-2.0-or-later"
+section="kde"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=(
+    build-essential
+    cmake
+    extra-cmake-modules
+    kwin-dev
+    libkf6config-dev
+    libkf6configwidgets-dev
+    libkf6coreaddons-dev
+    libkf6colorscheme-dev
+    qt6-base-dev
+)
+
+# Same libkwin6 split-package issue as pearos-magiclamp: not present under
+# that name on Ubuntu-based distros (KDE neon/Kubuntu), so drop the
+# auto-detected entry and depend on kwin-wayland unpinned instead.
+depends_exclude=(
+    libkwin6
+)
+depends=(
+    kwin-wayland
+)
+
+# Renamed from pearos-tinter.
+provides="pearos-tinter"
+conflicts="pearos-tinter"
+replaces="pearos-tinter"
+
+build() {
+    cmake -S "$startdir" -B "$srcdir/build" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib
+    cmake --build "$srcdir/build" --parallel
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install "$srcdir/build"
+}

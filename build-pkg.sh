@@ -5,6 +5,7 @@
 #
 # Reads <package-dir>/DEBBUILD, a bash file declaring:
 #   pkgname, pkgver, pkgrel, pkgdesc, arch, url, license, section, priority
+#   provides, conflicts, replaces  optional control-file strings, verbatim
 #   builddepends=()   packages needed only to build (installed via apt, not
 #                      recorded in the .deb)
 #   depends=()        extra runtime deps to force in addition to whatever
@@ -54,6 +55,9 @@ license=""
 section="misc"
 priority="optional"
 url=""
+provides=""
+conflicts=""
+replaces=""
 
 # shellcheck source=/dev/null
 source "$debbuild"
@@ -201,6 +205,9 @@ installed_size="$(du -sk "$pkgdir" --exclude=DEBIAN 2>/dev/null | cut -f1)"
     echo "Priority: $priority"
     echo "Architecture: $build_arch"
     [[ -n "$all_depends" ]] && echo "Depends: $all_depends"
+    [[ -n "$provides" ]] && echo "Provides: $provides"
+    [[ -n "$conflicts" ]] && echo "Conflicts: $conflicts"
+    [[ -n "$replaces" ]] && echo "Replaces: $replaces"
     echo "Installed-Size: ${installed_size:-0}"
     echo "Maintainer: ${maintainer:-Alexandru Balan <alxb421@gmail.com>}"
     [[ -n "$url" ]] && echo "Homepage: $url"

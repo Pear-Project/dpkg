@@ -1,0 +1,29 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-muternvf
+pkgver=26.6
+pkgrel=1
+pkgdesc="Mutern Fonts for pearOS"
+arch=('all')
+url="https://github.com/pearOS-archlinux/pearos-muternvf"
+license="GPL-3"
+section="fonts"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=()
+
+# fontconfig's own package registers a dpkg trigger on /usr/share/fonts, so
+# installing into that path rebuilds the font cache automatically - no
+# postinst/fc-cache call needed here.
+depends=(
+    fontconfig
+)
+
+build() {
+    :
+}
+
+package() {
+    install -d "$pkgdir/usr/share/fonts/truetype/pearos-muternvf"
+    install -m644 "$startdir/fonts/"*.ttf "$pkgdir/usr/share/fonts/truetype/pearos-muternvf/"
+}

@@ -78,12 +78,16 @@ if [[ ${#debs[@]} -eq 0 ]]; then
     exit 1
 fi
 
-deb_arch_dir() {
+# Echoes one repo arch-dir name per line. Architecture: all goes into every
+# arch dir this repo serves, since it's installable regardless of target arch
+# but our layout keys the apt suite by arch in the URL.
+deb_arch_dirs() {
     local deb_arch
     deb_arch="$(dpkg-deb -f "$1" Architecture)"
     case "$deb_arch" in
         amd64) echo "x86_64" ;;
         arm64) echo "aarch64" ;;
+        all) printf '%s\n' "x86_64" "aarch64" ;;
         *) echo -e "${red}[ERROR]${nc} Unknown/unsupported Debian arch: $deb_arch" >&2; exit 1 ;;
     esac
 }
@@ -91,12 +95,13 @@ deb_arch_dir() {
 declare -A touched_dirs=()
 
 for deb in "${debs[@]}"; do
-    arch_dir="$(deb_arch_dir "$deb")"
-    target="$repo/$arch_dir/$channel/$release"
-    mkdir -p "$target"
-    echo -e "${ul}${white}Publishing${nc} $(basename "$deb") -> ${target#"$repo"/}"
-    cp -f "$deb" "$target/"
-    touched_dirs["$target"]=1
+    while IFS= read -r arch_dir; do
+        target="$repo/$arch_dir/$channel/$release"
+        mkdir -p "$target"
+        echo -e "${ul}${white}Publishing${nc} $(basename "$deb") -> ${target#"$repo"/}"
+        cp -f "$deb" "$target/"
+        touched_dirs["$target"]=1
+    done < <(deb_arch_dirs "$deb")
 done
 
 # ── Regenerate apt metadata (flat, per-directory repo: "deb ... ./") ────────
