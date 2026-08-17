@@ -119,4 +119,4 @@ It needs these repo secrets:
 | `pearos-notes` | pearOS Notes - modern Qt6 notes application for pearOS |
 | `pearos-todo` | pearOS ToDo - modern Qt6 to-do application for pearOS |
 | `pearos-icons` | Icons for pearOS (924MB, `arch=all`) |
-| `pearos-dock` | Tahoe-style dock for KDE Plasma 6 - recovered from pkgbuilds git history (accidentally deleted upstream) |
+| `pearos-dock` | Tahoe-style dock for KDE Plasma 6 |
