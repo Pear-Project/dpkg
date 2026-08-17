@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-settings
 pkgver=26.7.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Settings for pearOS Goldwing"
 arch=('all')
 url="https://github.com/pearOS-archlinux/pearos-settings"
@@ -11,6 +11,12 @@ priority="optional"
 maintainer="Alexandru Balan <alxb421@gmail.com>"
 
 builddepends=()
+
+# usr/share/extras/wallpapers upstream ships 11 wallpaper sets; only
+# Default/Dev/Dev2 are kept here (the rest were deleted from this dir
+# entirely) to keep the built .deb under GitHub's 100MB single-file push
+# limit for debian-package-repo - the full set was ~152MB, this cut it to
+# ~43MB. Add more sets back individually if a real need comes up.
 
 # pearos-keyring is Arch/pacman-specific (GPG keys for the pacman repo) and
 # has no Debian equivalent - apt trust is handled separately (see
