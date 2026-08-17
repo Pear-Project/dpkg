@@ -1,0 +1,64 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-notch
+pkgver=26.6.1
+pkgrel=1
+pkgdesc="Dynamic notch widget for Linux"
+arch=('amd64')
+url="https://pearos.xyz/"
+license="custom"
+section="utils"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=(
+    build-essential
+    cmake
+    qt6-base-dev
+    qt6-svg-dev
+    libxcb1-dev
+    pkg-config
+    liblayershellqtinterface-dev
+)
+
+# The Wayland layer-shell plugin is loaded at runtime, not linked, so
+# dpkg-shlibdeps never sees it - same situation as kwin-wayland elsewhere
+# in this repo.
+depends=(
+    layer-shell-qt
+)
+
+build() {
+    cmake -S "$startdir" -B "$srcdir/build" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DWITH_LAYER_SHELL=ON
+    cmake --build "$srcdir/build" --parallel
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install "$srcdir/build"
+}
+
+# Matches upstream's pearos-notch.install: drop a copy of the .desktop
+# into the installing user's autostart, if they don't already have one.
+postinst="#!/bin/sh
+set -e
+case \"\$1\" in
+    configure)
+        if [ -n \"\$SUDO_USER\" ] && [ \"\$SUDO_USER\" != root ]; then
+            target_user=\"\$SUDO_USER\"
+        else
+            target_user=\"\$(id -un)\"
+        fi
+        target_home=\"\$(getent passwd \"\$target_user\" | cut -d: -f6)\"
+        if [ -n \"\$target_home\" ]; then
+            autostart_dir=\"\$target_home/.config/autostart\"
+            install -d -m755 \"\$autostart_dir\"
+            if [ ! -f \"\$autostart_dir/pearos-notch.desktop\" ]; then
+                install -m644 /usr/share/applications/pearos-notch.desktop \"\$autostart_dir/pearos-notch.desktop\"
+            fi
+        fi
+        ;;
+esac
+exit 0
+"

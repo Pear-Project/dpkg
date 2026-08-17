@@ -120,3 +120,7 @@ It needs these repo secrets:
 | `pearos-todo` | pearOS ToDo - modern Qt6 to-do application for pearOS |
 | `pearos-icons` | Icons for pearOS (924MB, `arch=all`) |
 | `pearos-dock` | Tahoe-style dock for KDE Plasma 6 |
+| `pearos-zshconfig` | pearOS NiceC0re ZSH config file |
+| `pearos-bootsound` | Boot sound service for pearOS |
+| `pearos-notch` | Dynamic notch widget for Linux |
+| `pearos-appmenu` | Global Menu applet for Plasma Desktop (pearOS custom build) |

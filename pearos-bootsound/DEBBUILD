@@ -1,0 +1,50 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-bootsound
+pkgver=26.6.2
+pkgrel=1
+pkgdesc="Boot sound service for pearOS"
+arch=('all')
+url="https://github.com/Pear-Project/pearos-boot-sound"
+license="GPL-3"
+section="sound"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=()
+
+# bootsound.service execs mpv on /usr/share/extras/boot-sound.wav, which
+# ships in pearos-settings, not here (upstream's own PKGBUILD leaves the
+# .wav install commented out too).
+depends=(
+    mpv
+    pearos-settings
+)
+
+build() {
+    :
+}
+
+package() {
+    install -d "$pkgdir/usr/lib/systemd/system"
+    install -Dm644 "$startdir/bootsound.service" "$pkgdir/usr/lib/systemd/system/bootsound.service"
+}
+
+postinst="#!/bin/sh
+set -e
+case \"\$1\" in
+    configure)
+        systemctl enable bootsound.service || true
+        ;;
+esac
+exit 0
+"
+
+postrm="#!/bin/sh
+set -e
+case \"\$1\" in
+    remove)
+        systemctl disable bootsound.service || true
+        ;;
+esac
+exit 0
+"

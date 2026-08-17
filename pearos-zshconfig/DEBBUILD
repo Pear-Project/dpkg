@@ -1,0 +1,23 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-zshconfig
+pkgver=26.4.0
+pkgrel=1
+pkgdesc="pearOS NiceC0re ZSH config file"
+arch=('all')
+url="https://pear-software.com"
+license="MIT"
+section="shells"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=()
+depends=()
+
+build() {
+    :
+}
+
+package() {
+    install -Dm644 "$startdir/.zshrc" "$pkgdir/root/.zshrc"
+    install -Dm644 "$startdir/.zshrc" "$pkgdir/etc/skel/.zshrc"
+}

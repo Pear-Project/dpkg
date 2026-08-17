@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-dock
 pkgver=26.6.10
-pkgrel=1
+pkgrel=2
 pkgdesc="Tahoe-style dock for KDE Plasma 6"
 arch=('amd64')
 url="https://github.com/pearOS-ArchLinux/pearos-dock"
@@ -33,8 +33,8 @@ builddepends=(
     libkf6kio-dev
     libkf6bookmarks-dev
     libplasma-dev
-    libkf6activities-dev
-    plasma-activities-stats-dev
+    libplasmaactivities-dev
+    libplasmaactivitiesstats-dev
     plasma-workspace-dev
     libksysguard-dev
     libdrm-dev
