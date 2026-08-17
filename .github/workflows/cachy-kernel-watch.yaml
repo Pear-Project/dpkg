@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Specific upstream release tag to (re)publish (blank = latest)'
+        description: 'Specific upstream release tag to (re)publish (blank = latest LTS)'
         required: false
 
 # Shares a group with build-and-publish.yaml since both push to
@@ -32,17 +32,28 @@ jobs:
         run: |
           tag="${{ inputs.tag }}"
           if [[ -z "$tag" ]]; then
-            tag=$(gh release view --repo "$UPSTREAM_REPO" --json tagName -q .tagName)
+            # pearOS tracks LTS builds only. Non-LTS tags look like
+            # cachyos-debian-linux-cachyos-7.1.8-11; LTS tags have "-lts-"
+            # in them (cachyos-debian-linux-cachyos-lts-6.18.42-14). `gh
+            # release list` is newest-first, so the first "-lts-" match is
+            # the newest LTS release -- non-LTS releases in between are
+            # intentionally skipped, not just the single "Latest" tag.
+            tag=$(gh release list --repo "$UPSTREAM_REPO" --limit 50 --json tagName -q '.[].tagName' \
+                  | grep -m1 -- '-lts-' || true)
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "Upstream tag: $tag"
+          echo "Upstream tag: ${tag:-<no LTS release found>}"
 
       - name: Skip if already published
         id: already
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if gh release view "${{ steps.upstream.outputs.tag }}" --repo Pear-Project/debian-package-repo >/dev/null 2>&1; then
+          tag="${{ steps.upstream.outputs.tag }}"
+          if [[ -z "$tag" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "No LTS tag resolved, nothing to do."
+          elif gh release view "$tag" --repo Pear-Project/debian-package-repo >/dev/null 2>&1; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "Already published, nothing to do."
           else
