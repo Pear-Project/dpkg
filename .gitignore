@@ -2,3 +2,4 @@
 .dpkgbuild/
 .gpg-passphrase
 rclone-*.log
+/debian-package-repo/

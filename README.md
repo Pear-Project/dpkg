@@ -74,11 +74,12 @@ trust model signs the *repository's* `Release` file instead, so this script:
 ./publish.sh pearos-magiclamp --repo ../debian-package-repo --channel main --release latest
 ```
 
-`../debian-package-repo` is a sibling checkout of
-[`Pear-Project/debian-package-repo`](https://github.com/Pear-Project/debian-package-repo) —
-locally that just means having both repos cloned next to each other; in CI,
-[`build-and-publish.yaml`](.github/workflows/build-and-publish.yaml) checks
-it out into that same relative path so the script behaves identically.
+`--repo` just needs to point at a checkout of
+[`Pear-Project/debian-package-repo`](https://github.com/Pear-Project/debian-package-repo).
+Locally that's a sibling clone (`../debian-package-repo`). In CI it's nested
+instead (`debian-package-repo/` inside the `dpkg` checkout) because
+`actions/checkout`'s `path:` refuses to point outside `$GITHUB_WORKSPACE` —
+see [`build-and-publish.yaml`](.github/workflows/build-and-publish.yaml).
 
 ## CI
 

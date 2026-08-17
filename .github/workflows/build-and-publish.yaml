@@ -107,13 +107,15 @@ jobs:
       - name: Checkout dpkg (this repo)
         uses: actions/checkout@v4
 
-      # Sibling checkout so `../debian-package-repo` resolves the same way
-      # here as it does for local testing.
+      # actions/checkout refuses any `path:` outside $GITHUB_WORKSPACE, so a
+      # true sibling checkout (`../debian-package-repo`, like the local dev
+      # layout) isn't possible in-CI. Nest it instead; publish.sh takes the
+      # repo path as an argument either way.
       - name: Checkout debian-package-repo
         uses: actions/checkout@v4
         with:
           repository: Pear-Project/debian-package-repo
-          path: ../debian-package-repo
+          path: debian-package-repo
           token: ${{ secrets.DEBIAN_REPO_DEPLOY_TOKEN }}
 
       - name: Install build tools
@@ -135,7 +137,7 @@ jobs:
           chmod 600 /tmp/.gpg-passphrase
 
       - name: Configure git identity for the publish commit
-        working-directory: ../debian-package-repo
+        working-directory: debian-package-repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -145,7 +147,7 @@ jobs:
           GPG_PASSPHRASE_FILE: /tmp/.gpg-passphrase
         run: |
           ./publish.sh "${{ matrix.pkgdir }}" \
-            --repo ../debian-package-repo \
+            --repo debian-package-repo \
             --channel main \
             --release latest \
             --push
