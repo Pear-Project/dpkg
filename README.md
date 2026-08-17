@@ -112,3 +112,4 @@ It needs these repo secrets:
 | `pearos-muternvf` | Mutern Fonts for pearOS |
 | `pearos-liquidgel` | Fork of the KWin Blur effect for pearOS with additional features (including force blur) and bug fixes |
 | `pearos-filesystem` | pearOS Goldwing branding (os-release, issue, logo) - branding-only port of `pearOS-archlinux/filesystem`; see the package's own note for why |
+| `pearos-settings` | Settings for pearOS Goldwing - themes, wallpapers, `/etc/skel`, Plasma/SDDM/Plymouth branding (depends on several packages not yet in this repo) |

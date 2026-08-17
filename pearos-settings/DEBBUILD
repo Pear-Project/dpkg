@@ -1,0 +1,47 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-settings
+pkgver=26.7.0
+pkgrel=1
+pkgdesc="Settings for pearOS Goldwing"
+arch=('all')
+url="https://github.com/pearOS-archlinux/pearos-settings"
+license="GPL-3"
+section="misc"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=()
+
+# pearos-keyring is Arch/pacman-specific (GPG keys for the pacman repo) and
+# has no Debian equivalent - apt trust is handled separately (see
+# ../importer/). Everything else from the Arch depends=() is kept, even
+# though most of the pearos-* ones aren't packaged in this repo yet -
+# installing this will fail until they are too, same situation
+# pearos-window-borders was in before pearos-muternvf/pearos-window-tinter
+# existed.
+depends=(
+    konsole
+    kmail
+    pearos-notes
+    pearos-appstore
+    pearos-calendar
+    pearos-contacts
+    pearos-notch
+    pearos-todo
+    pearos-calculator
+    pearos-liquidgel
+    pearos-window-borders
+    pearos-icons
+    pearos-zshconfig
+    system-overview
+)
+
+build() {
+    :
+}
+
+package() {
+    mkdir -p "$pkgdir/etc" "$pkgdir/usr"
+    cp -r "$startdir/etc/." "$pkgdir/etc/"
+    cp -r "$startdir/usr/." "$pkgdir/usr/"
+}
