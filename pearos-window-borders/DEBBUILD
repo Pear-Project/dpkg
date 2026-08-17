@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-window-borders
 pkgver=26.8.0
-pkgrel=1
+pkgrel=2
 pkgdesc="pearOS-style KWin window border"
 arch=('amd64')
 url="https://pearos.xyz"
@@ -27,16 +27,14 @@ builddepends=(
 # kwin-wayland: the decoration is a plugin loaded by KWin, but this package
 #   only links against libkdecorations3 (not libkwin itself), so
 #   dpkg-shlibdeps never sees a kwin dependency to detect.
-# libkf6widgetsaddons6: matches the Arch PKGBUILD's declared runtime dep;
-#   not directly find_package()'d in CMakeLists so dpkg-shlibdeps may or may
-#   not pick it up depending on how it's pulled in transitively.
+#   (libkf6widgetsaddons6 was here too but dpkg-shlibdeps already picks it
+#   up on its own - it's pulled in transitively - so it'd just be a dupe.)
 # pearos-muternvf / pearos-window-tinter: the titlebar font and the
 #   wallpaper tint this decoration is designed to sit on. Real runtime
 #   deps, but not yet packaged in this repo - installing this package will
 #   fail until they are too.
 depends=(
     kwin-wayland
-    libkf6widgetsaddons6
     pearos-muternvf
     pearos-window-tinter
 )
