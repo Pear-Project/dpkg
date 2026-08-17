@@ -5,6 +5,16 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+# Every push triggers its own independent run, and matrix max-parallel only
+# serializes jobs *within* one run - two runs from back-to-back pushes can
+# still race to publish to debian-package-repo at the same time. publish.sh's
+# git-pull-rebase retry only survives a clean fast-forward; two runs
+# regenerating the same directory's Packages/Release concurrently produce a
+# real rebase conflict it can't resolve. Serialize entire runs instead.
+concurrency:
+  group: publish-debian-package-repo
+  cancel-in-progress: false
+
 jobs:
   detect-changes:
     runs-on: ubuntu-latest

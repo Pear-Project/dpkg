@@ -1,0 +1,26 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-livecd-desktop
+pkgver=22.03
+pkgrel=1
+pkgdesc="Default pearOS installer shortcut for the live desktop"
+arch=('all')
+url="https://github.com/pearOS-archlinux/pearos-livecd-desktop"
+license="custom"
+section="misc"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+# Exec=bash bin_install references a script from the live-ISO airootfs
+# that isn't part of this repo - harmless to install ahead of that (just
+# an inert desktop icon until the ISO/installer side exists), but it
+# won't actually launch anything yet.
+builddepends=()
+depends=()
+
+build() {
+    :
+}
+
+package() {
+    install -Dm644 "$startdir/system_install.desktop" "$pkgdir/etc/skel/Desktop/system_install.desktop"
+}

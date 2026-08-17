@@ -102,6 +102,28 @@ It needs these repo secrets:
   to `Pear-Project/debian-package-repo`, since the default `GITHUB_TOKEN`
   can't push cross-repo
 
+Both workflows share the `publish-debian-package-repo` concurrency group so
+back-to-back pushes (or a scheduled run landing mid-build) queue instead of
+racing to publish at the same time - `publish.sh`'s pull-rebase retry only
+survives a clean fast-forward, not two runs regenerating the same
+`Packages`/`Release` concurrently.
+
+## Kernel: cachy-kernel-watch.yaml
+
+[`cachy-kernel-watch.yaml`](.github/workflows/cachy-kernel-watch.yaml) polls
+[`Deadly-Signal/cachy-kernel-debian`](https://github.com/Deadly-Signal/cachy-kernel-debian)
+daily for new releases (that repo has no push/tag trigger of its own to hook
+into - it's manual-dispatch-only upstream, so polling is the only option).
+On a new release, [`cachy-kernel-repack.sh`](cachy-kernel-repack.sh)
+downloads its `.deb` assets and rebrands them (`cachyos` → `pearos` in
+`DEBIAN/control` and the filename; skips the `-dbg` package).
+
+`linux-headers-*` and `linux-libc-dev` are small and go through the normal
+apt repo (`x86_64/main/latest`, via `publish.sh`). `linux-image-*` is
+~130-150MB - over GitHub's 100MB per-file push limit - so it's published as
+a [`debian-package-repo` Release](https://github.com/Pear-Project/debian-package-repo/releases)
+asset instead, downloaded and installed manually rather than via `apt`.
+
 ## Packages
 
 | Package | Description |
@@ -120,6 +142,8 @@ It needs these repo secrets:
 | `pearos-todo` | pearOS ToDo - modern Qt6 to-do application for pearOS |
 | `pearos-icons` | Icons for pearOS (924MB, `arch=all`) |
 | `pearos-dock` | Tahoe-style dock for KDE Plasma 6 |
+| `pearos-livecd-desktop` | Default pearOS installer shortcut for the live desktop |
+| `linux-image/headers-*-pearos`, `linux-libc-dev` | Rebranded CachyOS kernel, auto-published by `cachy-kernel-watch.yaml` (see above) |
 | `pearos-zshconfig` | pearOS NiceC0re ZSH config file |
 | `pearos-bootsound` | Boot sound service for pearOS |
 | `pearos-notch` | Dynamic notch widget for Linux |

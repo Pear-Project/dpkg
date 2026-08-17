@@ -1,0 +1,125 @@
+name: Watch cachy-kernel-debian releases and republish as pearos
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Specific upstream release tag to (re)publish (blank = latest)'
+        required: false
+
+# Shares a group with build-and-publish.yaml since both push to
+# debian-package-repo - see the comment there for why.
+concurrency:
+  group: publish-debian-package-repo
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_REPO: Deadly-Signal/cachy-kernel-debian
+
+jobs:
+  check-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dpkg (this repo)
+        uses: actions/checkout@v4
+
+      - name: Resolve upstream tag
+        id: upstream
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ inputs.tag }}"
+          if [[ -z "$tag" ]]; then
+            tag=$(gh release view --repo "$UPSTREAM_REPO" --json tagName -q .tagName)
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Upstream tag: $tag"
+
+      - name: Skip if already published
+        id: already
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "${{ steps.upstream.outputs.tag }}" --repo Pear-Project/debian-package-repo >/dev/null 2>&1; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Already published, nothing to do."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install build tools
+        if: steps.already.outputs.skip == 'false'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends dpkg-dev apt-utils gnupg2
+
+      - name: Download + rebrand cachyos -> pearos
+        if: steps.already.outputs.skip == 'false'
+        id: repack
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./cachy-kernel-repack.sh --tag "${{ steps.upstream.outputs.tag }}" --out cachy-out
+
+      - name: Checkout debian-package-repo
+        if: steps.already.outputs.skip == 'false'
+        uses: actions/checkout@v4
+        with:
+          repository: Pear-Project/debian-package-repo
+          path: debian-package-repo
+          token: ${{ secrets.DEBIAN_REPO_DEPLOY_TOKEN }}
+
+      - name: Import signing key
+        if: steps.already.outputs.skip == 'false'
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          echo "$GPG_PASSPHRASE" > /tmp/.gpg-passphrase
+          chmod 600 /tmp/.gpg-passphrase
+
+      - name: Configure git identity for the publish commit
+        if: steps.already.outputs.skip == 'false'
+        working-directory: debian-package-repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # linux-image-*.deb is ~130MB+, over GitHub's 100MB per-file push
+      # limit - it goes to a Release instead. headers/libc-dev are small
+      # and go through the normal apt repo like every other package.
+      - name: Publish headers + libc-dev to the apt repo
+        if: steps.already.outputs.skip == 'false'
+        env:
+          GPG_PASSPHRASE_FILE: /tmp/.gpg-passphrase
+        run: |
+          # publish.sh takes one file-or-directory argument; give it a
+          # directory with just the two small packages (linux-image is
+          # published separately as a Release asset, below).
+          mkdir -p cachy-out/apt-repo-debs
+          cp cachy-out/repacked/linux-headers-*.deb cachy-out/repacked/linux-libc-dev*.deb cachy-out/apt-repo-debs/
+          ./publish.sh cachy-out/apt-repo-debs \
+            --repo debian-package-repo \
+            --channel main \
+            --release latest \
+            --push
+
+      - name: Publish linux-image as a GitHub Release asset
+        if: steps.already.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.DEBIAN_REPO_DEPLOY_TOKEN }}
+        run: |
+          tag="${{ steps.upstream.outputs.tag }}"
+          image_deb=(cachy-out/repacked/linux-image-*.deb)
+          gh release create "$tag" \
+            --repo Pear-Project/debian-package-repo \
+            --title "pearOS CachyOS kernel ($tag)" \
+            --notes "Rebranded from ${UPSTREAM_REPO}@${tag}. linux-headers/linux-libc-dev are in the apt repo (x86_64/main/latest); linux-image is here as a Release asset because it's over GitHub's 100MB apt-repo push limit. Install: \`sudo apt install ./linux-headers-*.deb ./linux-image-*.deb && sudo update-grub\`" \
+            "${image_deb[@]}"
+
+      - name: Clean up passphrase
+        if: always()
+        run: rm -f /tmp/.gpg-passphrase

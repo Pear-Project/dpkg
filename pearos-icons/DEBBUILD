@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-icons
 pkgver=26.7.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Icons for pearOS"
 arch=('all')
 url="https://github.com/pearOS-archlinux/pearos-icons"
