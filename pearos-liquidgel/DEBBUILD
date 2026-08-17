@@ -1,0 +1,71 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-liquidgel
+pkgver=26.7
+pkgrel=1
+pkgdesc="Fork of the KWin Blur effect for pearOS with additional features (including force blur) and bug fixes"
+arch=('amd64')
+url="https://github.com/pearOS-archlinux/liquid-gel"
+license="GPL-3"
+section="kde"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+# Base list is upstream's own documented Debian/Kubuntu/KDE-neon apt line
+# (README.md, "Debian-based" section, Wayland variant) for this exact
+# codebase. libdrm-dev/libvulkan-dev/pkg-config are added on top because
+# KWinConfig.cmake's find_dependency() chain needs them for ANY
+# find_package(KWin) consumer, as already hit by pearos-magiclamp and
+# pearos-window-tinter. libx11-dev is added because CMakeLists.txt calls
+# find_package(X11 REQUIRED) unconditionally, even when the X11 effect
+# variant itself is disabled below.
+builddepends=(
+    build-essential
+    cmake
+    extra-cmake-modules
+    qt6-tools-dev
+    kwin-dev
+    gettext
+    libkf6config-dev
+    libkf6configwidgets-dev
+    libkf6coreaddons-dev
+    libkf6crash-dev
+    libkf6globalaccel-dev
+    libkf6i18n-dev
+    libkf6kio-dev
+    libkf6service-dev
+    libkf6notifications-dev
+    libkf6widgetsaddons-dev
+    libkf6windowsystem-dev
+    libkf6guiaddons-dev
+    libkf6kcmutils-dev
+    libkdecorations3-dev
+    libxcb-composite0-dev
+    libxcb-randr0-dev
+    libxcb-shm0-dev
+    libx11-dev
+    libdrm-dev
+    libvulkan-dev
+    pkg-config
+)
+
+# Same libkwin6 split-package issue as the other KWin effects in this repo:
+# not present under that name on Ubuntu-based distros (KDE neon/Kubuntu).
+depends_exclude=(
+    libkwin6
+)
+depends=(
+    kwin-wayland
+)
+
+build() {
+    cmake -S "$startdir" -B "$srcdir/build" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBETTERBLUR_WAYLAND=ON \
+        -DBETTERBLUR_X11=OFF
+    cmake --build "$srcdir/build" --parallel
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install "$srcdir/build"
+}

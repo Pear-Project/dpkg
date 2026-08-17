@@ -110,3 +110,4 @@ It needs these repo secrets:
 | `pearos-window-borders` | pearOS-style KWin window border |
 | `pearos-window-tinter` | KWin effect that tints window backgrounds with the wallpaper color behind them (was `pearos-tinter`) |
 | `pearos-muternvf` | Mutern Fonts for pearOS |
+| `pearos-liquidgel` | Fork of the KWin Blur effect for pearOS with additional features (including force blur) and bug fixes |
