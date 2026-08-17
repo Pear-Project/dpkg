@@ -1,0 +1,15 @@
+NAME="pearOS Goldwing"
+VERSION="26.8 (Goldwing)"
+VERSION_CODENAME=goldwing
+PRETTY_NAME="pearOS Goldwing"
+ID=debian
+ID_LIKE="ubuntu debian"
+BUILD_ID=rolling
+ANSI_COLOR="38;2;23;147;209"
+HOME_URL="https://pearOS.xyz"
+DOCUMENTATION_URL="https://wiki.pearos.xyz"
+SUPPORT_URL="https://discord.gg/QJPetvVhUb"
+BUG_REPORT_URL="https://bugs.pearos.xyz/"
+LOGO=pearos-logo
+IMAGE_ID=pearos-goldwing
+IMAGE_VERSION=26.8
