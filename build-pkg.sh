@@ -19,6 +19,8 @@
 #   preinst/postinst/prerm/postrm  optional strings; each becomes the literal
 #                      contents of the matching DEBIAN maintainer script
 #                      (include your own #!/bin/sh and set -e)
+#   triggers           optional string, becomes DEBIAN/triggers verbatim
+#                      (e.g. "interest-noawait /some/path")
 #
 # Output: <package-dir>/<pkgname>_<pkgver>-<pkgrel>_<arch>.deb
 
@@ -223,6 +225,13 @@ for script_name in preinst postinst prerm postrm; do
         chmod 755 "$pkgdir/DEBIAN/$script_name"
     fi
 done
+
+# DEBIAN/triggers: e.g. triggers="interest-noawait /some/path" - lets a
+# package react when another package touches files under a watched path,
+# without that other package needing to know we exist.
+if [[ -n "${triggers:-}" ]]; then
+    printf '%s\n' "$triggers" > "$pkgdir/DEBIAN/triggers"
+fi
 
 # ── Build the .deb ───────────────────────────────────────────────────────────
 

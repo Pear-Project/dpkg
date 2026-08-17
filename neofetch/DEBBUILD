@@ -1,0 +1,25 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=neofetch
+pkgver=8.1.0
+pkgrel=1
+pkgdesc="A CLI system information tool written in BASH that supports displaying images."
+arch=('all')
+url="https://github.com/pearOS-archlinux/neofetch"
+license="MIT"
+section="utils"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=()
+depends=(
+    bash
+)
+
+build() {
+    :
+}
+
+package() {
+    make -f "$startdir/neofetch.mk" -C "$startdir" DESTDIR="$pkgdir" install
+    install -Dm644 "$startdir/LICENSE.md" "$pkgdir/usr/share/licenses/neofetch/LICENSE.md"
+}

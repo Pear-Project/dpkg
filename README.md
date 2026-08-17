@@ -145,6 +145,8 @@ asset instead, downloaded and installed manually rather than via `apt`.
 | `pearos-livecd-desktop` | Default pearOS installer shortcut for the live desktop |
 | `linux-image/headers-*-pearos`, `linux-libc-dev` | Rebranded CachyOS kernel, auto-published by `cachy-kernel-watch.yaml` (see above) |
 | `pearos-zshconfig` | pearOS NiceC0re ZSH config file |
+| `system-overview` | pearOS NiceC0re System Overview application (Qt6 native) - Arch pkgname is `pearos-about`, real package name is `system-overview` |
+| `neofetch` | pearOS's fork of the CLI system info tool |
 | `pearos-bootsound` | Boot sound service for pearOS |
 | `pearos-notch` | Dynamic notch widget for Linux |
 | `pearos-appmenu` | Global Menu applet for Plasma Desktop (pearOS custom build) |

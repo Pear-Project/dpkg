@@ -1,0 +1,33 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=system-overview
+pkgver=26.3
+pkgrel=1
+pkgdesc="pearOS NiceC0re System Overview application (Qt6 native)"
+arch=('amd64')
+url="https://pearos.xyz"
+license="GPL-3"
+section="utils"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=(
+    build-essential
+    cmake
+    qt6-base-dev
+    qt6-svg-dev
+)
+
+depends=()
+
+build() {
+    cmake -S "$startdir" -B "$srcdir/build" \
+        -DCMAKE_BUILD_TYPE=Release
+    cmake --build "$srcdir/build" --parallel
+}
+
+package() {
+    install -Dm755 "$srcdir/build/pearos-about-qt" "$pkgdir/usr/bin/system-overview"
+    install -d "$pkgdir/usr/share/extras/pearos-about/assets"
+    install -m644 "$startdir"/assets/*.svg "$pkgdir/usr/share/extras/pearos-about/assets/"
+    install -Dm644 "$startdir/license.txt" "$pkgdir/usr/share/licenses/system-overview/license.txt"
+}
