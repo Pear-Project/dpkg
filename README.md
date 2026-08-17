@@ -114,7 +114,11 @@ survives a clean fast-forward, not two runs regenerating the same
 [`Deadly-Signal/cachy-kernel-debian`](https://github.com/Deadly-Signal/cachy-kernel-debian)
 daily for new releases (that repo has no push/tag trigger of its own to hook
 into - it's manual-dispatch-only upstream, so polling is the only option).
-On a new release, [`cachy-kernel-repack.sh`](cachy-kernel-repack.sh)
+Only tracks **LTS** builds (tags containing `-lts-`) - resolves the newest
+`-lts-` tag from the full release list rather than whatever's currently
+marked "Latest", so a same-day non-LTS release published in between two
+polls doesn't get picked up (and non-LTS releases are never published at
+all, by design). On a new release, [`cachy-kernel-repack.sh`](cachy-kernel-repack.sh)
 downloads its `.deb` assets and rebrands them (`cachyos` → `pearos` in
 `DEBIAN/control` and the filename; skips the `-dbg` package).
 
