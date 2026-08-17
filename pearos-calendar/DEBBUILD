@@ -1,0 +1,31 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-calendar
+pkgver=26.7
+pkgrel=1
+pkgdesc="pearOS Calendar - modern Qt6 calendar application for pearOS"
+arch=('amd64')
+url="https://github.com/arch-linux-gui/pearos-calendar"
+license="MIT"
+section="utils"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=(
+    build-essential
+    cmake
+    qt6-base-dev
+    libkf6windowsystem-dev
+)
+
+depends=()
+
+build() {
+    cmake -S "$startdir" -B "$srcdir/build" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build "$srcdir/build" --parallel
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install "$srcdir/build"
+}

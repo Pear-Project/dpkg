@@ -1,0 +1,49 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-calculator
+pkgver=26.1
+pkgrel=1
+pkgdesc="pearOS Calculator"
+arch=('amd64')
+url="https://pearos.xyz"
+license="custom"
+section="utils"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=(
+    build-essential
+    cmake
+    qt6-base-dev
+)
+
+depends=()
+
+build() {
+    cmake -S "$startdir" -B "$srcdir/build" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build "$srcdir/build" --parallel
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install "$srcdir/build"
+    chmod -R a+rX "$pkgdir/usr/share/extras/calculator"
+    find "$pkgdir/usr/share/extras/calculator" -type f -exec chmod 644 {} \;
+}
+
+# Matches upstream's pear-calculator.install: chown the writable settings
+# dir to whichever user actually ran the install, so the app can write to
+# it without needing to run as root itself.
+postinst="#!/bin/sh
+set -e
+case \"\$1\" in
+    configure)
+        if [ -n \"\$SUDO_UID\" ] && [ -n \"\$SUDO_GID\" ]; then
+            chown -R \"\$SUDO_UID:\$SUDO_GID\" /usr/share/extras/calculator
+        elif [ -n \"\$SUDO_USER\" ]; then
+            chown -R \"\$SUDO_USER:\$SUDO_USER\" /usr/share/extras/calculator
+        fi
+        ;;
+esac
+exit 0
+"

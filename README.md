@@ -113,3 +113,8 @@ It needs these repo secrets:
 | `pearos-liquidgel` | Fork of the KWin Blur effect for pearOS with additional features (including force blur) and bug fixes |
 | `pearos-filesystem` | pearOS Goldwing branding (os-release, issue, logo) - branding-only port of `pearOS-archlinux/filesystem`; see the package's own note for why |
 | `pearos-settings` | Settings for pearOS Goldwing - themes, wallpapers, `/etc/skel`, Plasma/SDDM/Plymouth branding (depends on several packages not yet in this repo) |
+| `pearos-calculator` | pearOS Calculator |
+| `pearos-calendar` | pearOS Calendar - modern Qt6 calendar application for pearOS |
+| `pearos-contacts` | pearOS Contacts - modern Qt6 contacts application for pearOS |
+| `pearos-notes` | pearOS Notes - modern Qt6 notes application for pearOS |
+| `pearos-todo` | pearOS ToDo - modern Qt6 to-do application for pearOS |
