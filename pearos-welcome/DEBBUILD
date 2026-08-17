@@ -1,0 +1,51 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-welcome
+pkgver=26.8.0
+pkgrel=1
+pkgdesc="pearOS Goldwing Welcome application"
+arch=('amd64')
+url="https://pear-software.com"
+license="MIT"
+section="utils"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=(
+    build-essential
+    cmake
+    qt6-base-dev
+    libkf6windowsystem-dev
+)
+
+depends=(pearos-liquidgel)
+
+build() {
+    cmake -S "$startdir" -B "$srcdir/build" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build "$srcdir/build" --parallel
+}
+
+package() {
+    install -Dm755 "$srcdir/build/pearos-welcome" "$pkgdir/usr/bin/pearos-welcome"
+    install -Dm644 "$startdir/assets/welcome.desktop" "$pkgdir/usr/share/applications/welcome.desktop"
+    install -Dm644 "$startdir/assets/welcome.png" "$pkgdir/usr/share/pixmaps/welcome.png"
+
+    install -Dm644 "$startdir/styles.qss" "$pkgdir/usr/share/pearos-welcome/styles.qss"
+    install -Dm644 "$startdir/assets/welcome.png" "$pkgdir/usr/share/pearos-welcome/assets/welcome.png"
+    install -Dm644 "$startdir/assets/1welcome.png" "$pkgdir/usr/share/pearos-welcome/assets/1welcome.png"
+    install -Dm644 "$startdir/assets/move_me.png" "$pkgdir/usr/share/pearos-welcome/assets/move_me.png"
+    install -Dm644 "$startdir/assets/discord.svg" "$pkgdir/usr/share/pearos-welcome/assets/discord.svg"
+    install -Dm644 "$startdir/assets/github.svg" "$pkgdir/usr/share/pearos-welcome/assets/github.svg"
+    install -Dm644 "$startdir/assets/patreon.png" "$pkgdir/usr/share/pearos-welcome/assets/patreon.png"
+    install -Dm644 "$startdir/assets/paypal.svg" "$pkgdir/usr/share/pearos-welcome/assets/paypal.svg"
+    install -Dm644 "$startdir/assets/youtube.svg" "$pkgdir/usr/share/pearos-welcome/assets/youtube.svg"
+    install -Dm644 "$startdir/assets/switch-off.svg" "$pkgdir/usr/share/pearos-welcome/assets/switch-off.svg"
+    install -Dm644 "$startdir/assets/switch-on.svg" "$pkgdir/usr/share/pearos-welcome/assets/switch-on.svg"
+    install -Dm644 "$startdir/assets/pearos.asc" "$pkgdir/usr/share/pearos-welcome/assets/pearos.asc"
+    for f in "$startdir"/assets/titlebuttons/*.png; do
+        install -Dm644 "$f" "$pkgdir/usr/share/pearos-welcome/assets/titlebuttons/$(basename "$f")"
+    done
+    install -Dm755 "$startdir/updater.sh" "$pkgdir/usr/share/pearos-welcome/updater.sh"
+    install -Dm644 "$startdir/kwin-scripts/filer-shell-qt5-window-tracker.js" "$pkgdir/usr/share/pearos-welcome/kwin-scripts/filer-shell-qt5-window-tracker.js"
+}
