@@ -15,6 +15,9 @@
 #                      to supply a portable replacement
 #   build()           runs with $startdir/$srcdir available, produces a build
 #   package()         installs the built output into $pkgdir
+#   preinst/postinst/prerm/postrm  optional strings; each becomes the literal
+#                      contents of the matching DEBIAN maintainer script
+#                      (include your own #!/bin/sh and set -e)
 #
 # Output: <package-dir>/<pkgname>_<pkgver>-<pkgrel>_<arch>.deb
 
@@ -172,7 +175,14 @@ fi
 
 all_depends="$shlibs_depends"
 if [[ ${#depends[@]} -gt 0 ]]; then
-    manual_depends="$(IFS=,; echo "${depends[*]}")"
+    manual_depends=""
+    for d in "${depends[@]}"; do
+        if [[ -z "$manual_depends" ]]; then
+            manual_depends="$d"
+        else
+            manual_depends="$manual_depends, $d"
+        fi
+    done
     if [[ -n "$all_depends" ]]; then
         all_depends="$all_depends, $manual_depends"
     else
@@ -196,6 +206,16 @@ installed_size="$(du -sk "$pkgdir" --exclude=DEBIAN 2>/dev/null | cut -f1)"
     [[ -n "$url" ]] && echo "Homepage: $url"
     echo "Description: $pkgdesc"
 } > "$pkgdir/DEBIAN/control"
+
+# ── Maintainer scripts ───────────────────────────────────────────────────────
+
+for script_name in preinst postinst prerm postrm; do
+    script_content="${!script_name:-}"
+    if [[ -n "$script_content" ]]; then
+        printf '%s\n' "$script_content" > "$pkgdir/DEBIAN/$script_name"
+        chmod 755 "$pkgdir/DEBIAN/$script_name"
+    fi
+done
 
 # ── Build the .deb ───────────────────────────────────────────────────────────
 

@@ -1,0 +1,81 @@
+# Maintainer: Alexandru Balan <alxb421@gmail.com>
+pkgname=pearos-window-borders
+pkgver=26.8.0
+pkgrel=1
+pkgdesc="pearOS-style KWin window border"
+arch=('amd64')
+url="https://pearos.xyz"
+license="GPL-3"
+section="kde"
+priority="optional"
+maintainer="Alexandru Balan <alxb421@gmail.com>"
+
+builddepends=(
+    build-essential
+    cmake
+    extra-cmake-modules
+    libkdecorations3-dev
+    libkf6kcmutils-dev
+    libkf6guiaddons-dev
+    libkf6windowsystem-dev
+    libkf6i18n-dev
+    libkf6config-dev
+    libkf6coreaddons-dev
+    qt6-base-dev
+)
+
+# kwin-wayland: the decoration is a plugin loaded by KWin, but this package
+#   only links against libkdecorations3 (not libkwin itself), so
+#   dpkg-shlibdeps never sees a kwin dependency to detect.
+# libkf6widgetsaddons6: matches the Arch PKGBUILD's declared runtime dep;
+#   not directly find_package()'d in CMakeLists so dpkg-shlibdeps may or may
+#   not pick it up depending on how it's pulled in transitively.
+# pearos-muternvf / pearos-window-tinter: the titlebar font and the
+#   wallpaper tint this decoration is designed to sit on. Real runtime
+#   deps, but not yet packaged in this repo - installing this package will
+#   fail until they are too.
+depends=(
+    kwin-wayland
+    libkf6widgetsaddons6
+    pearos-muternvf
+    pearos-window-tinter
+)
+
+build() {
+    cmake -S "$startdir" -B "$srcdir/build" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DKDE_INSTALL_LIBDIR=lib \
+        -DBUILD_TESTING=OFF \
+        -DKDE_INSTALL_USE_QT_SYS_PATHS=ON
+    cmake --build "$srcdir/build" --parallel
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install "$srcdir/build"
+}
+
+postinst="#!/bin/sh
+set -e
+case \"\$1\" in
+    configure)
+        if command -v kwriteconfig6 >/dev/null 2>&1; then
+            kwriteconfig6 --file /etc/xdg/kwinrc --group Plugins --key pearos-busywatcherEnabled true
+        fi
+        echo ':: Log out and back in to load the new window decoration.'
+        ;;
+esac
+exit 0
+"
+
+postrm="#!/bin/sh
+set -e
+case \"\$1\" in
+    remove)
+        if command -v kwriteconfig6 >/dev/null 2>&1; then
+            kwriteconfig6 --file /etc/xdg/kwinrc --group Plugins --key pearos-busywatcherEnabled --delete
+        fi
+        ;;
+esac
+exit 0
+"

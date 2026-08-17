@@ -100,3 +100,4 @@ It needs these repo secrets:
 | Package | Description |
 |---------|-------------|
 | `pearos-magiclamp` | KWin window minimization effect - Pearos Magic Lamp |
+| `pearos-window-borders` | pearOS-style KWin window border (needs `pearos-muternvf` + `pearos-window-tinter`, not yet packaged here) |
