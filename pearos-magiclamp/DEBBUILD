@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-magiclamp
 pkgver=26.6
-pkgrel=3
+pkgrel=4
 pkgdesc="KWin window minimization effect - Pearos Magic Lamp"
 arch=('amd64')
 url="https://github.com/koryboc/pearos-magiclamp"
@@ -27,10 +27,20 @@ builddepends=(
     pkg-config
 )
 
+# libkwin6 is Debian's split-out package for libkwin.so.6; on Ubuntu-based
+# distros (KDE neon, Kubuntu) that same library ships inside kwin-common
+# instead, under no package literally named libkwin6 - so drop the
+# auto-detected entry and depend on kwin-wayland (present under that name on
+# both) with no pinned version instead.
+depends_exclude=(
+    libkwin6
+)
+
 # Extra runtime deps beyond what dpkg-shlibdeps auto-detects from the linked
-# .so files (e.g. things only loaded at runtime, not linked at build time).
+# .so files (e.g. things only loaded at runtime, not linked at build time,
+# or replacements for depends_exclude entries above).
 depends=(
-    kwin
+    kwin-wayland
 )
 
 build() {

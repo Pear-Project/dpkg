@@ -9,6 +9,10 @@
 #                      recorded in the .deb)
 #   depends=()        extra runtime deps to force in addition to whatever
 #                      dpkg-shlibdeps auto-detects from linked libraries
+#   depends_exclude=() package names to drop from dpkg-shlibdeps' output
+#                      (e.g. a Debian-only lib split not present by that
+#                      name on Ubuntu-derivatives); pair with depends=()
+#                      to supply a portable replacement
 #   build()           runs with $startdir/$srcdir available, produces a build
 #   package()         installs the built output into $pkgdir
 #
@@ -40,6 +44,7 @@ fi
 
 builddepends=()
 depends=()
+depends_exclude=()
 arch=()
 pkgrel=1
 license=""
@@ -133,6 +138,36 @@ if command -v dpkg-shlibdeps &>/dev/null && command -v file &>/dev/null; then
     fi
 else
     echo -e "${yellow}[WARN]${nc} dpkg-shlibdeps and/or file not found (install dpkg-dev, file) - only manual depends[] will be recorded." >&2
+fi
+
+# Drop auto-detected entries whose package name doesn't actually exist on
+# every target distro (e.g. a lib split into its own binary package on
+# Debian but bundled into a differently-named package on Ubuntu-derivatives
+# like KDE neon/Kubuntu). Replace those via depends[] instead.
+if [[ ${#depends_exclude[@]} -gt 0 && -n "$shlibs_depends" ]]; then
+    IFS=',' read -ra dep_entries <<< "$shlibs_depends"
+    filtered=()
+    for entry in "${dep_entries[@]}"; do
+        entry="${entry#"${entry%%[![:space:]]*}"}"
+        pkg_name="${entry%% *}"
+        keep=1
+        for ex in "${depends_exclude[@]}"; do
+            [[ "$pkg_name" == "$ex" ]] && { keep=0; break; }
+        done
+        if [[ "$keep" -eq 1 ]]; then
+            filtered+=("$entry")
+        else
+            echo -e "${yellow}[INFO]${nc} Excluding auto-detected dependency: $entry" >&2
+        fi
+    done
+    shlibs_depends=""
+    for f in "${filtered[@]}"; do
+        if [[ -z "$shlibs_depends" ]]; then
+            shlibs_depends="$f"
+        else
+            shlibs_depends="$shlibs_depends, $f"
+        fi
+    done
 fi
 
 all_depends="$shlibs_depends"
