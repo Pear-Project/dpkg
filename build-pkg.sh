@@ -10,6 +10,11 @@
 #                      recorded in the .deb)
 #   depends=()        extra runtime deps to force in addition to whatever
 #                      dpkg-shlibdeps auto-detects from linked libraries
+#   recommends=()     soft deps (Recommends:) -- apt installs them by
+#                      default but won't refuse to install the package
+#                      without them; use for anything not on every target
+#                      distro (e.g. Ubuntu-only) so the .deb still installs
+#                      elsewhere, just with that feature inert
 #   depends_exclude=() package names to drop from dpkg-shlibdeps' output
 #                      (e.g. a Debian-only lib split not present by that
 #                      name on Ubuntu-derivatives); pair with depends=()
@@ -51,6 +56,7 @@ fi
 builddepends=()
 depends=()
 depends_exclude=()
+recommends=()
 arch=()
 pkgrel=1
 license=""
@@ -222,6 +228,15 @@ if [[ ${#depends[@]} -gt 0 ]]; then
     fi
 fi
 
+recommends_str=""
+for d in "${recommends[@]}"; do
+    if [[ -z "$recommends_str" ]]; then
+        recommends_str="$d"
+    else
+        recommends_str="$recommends_str, $d"
+    fi
+done
+
 # ── DEBIAN/control ───────────────────────────────────────────────────────────
 
 installed_size="$(du -sk "$pkgdir" --exclude=DEBIAN 2>/dev/null | cut -f1)"
@@ -233,6 +248,7 @@ installed_size="$(du -sk "$pkgdir" --exclude=DEBIAN 2>/dev/null | cut -f1)"
     echo "Priority: $priority"
     echo "Architecture: $build_arch"
     [[ -n "$all_depends" ]] && echo "Depends: $all_depends"
+    [[ -n "$recommends_str" ]] && echo "Recommends: $recommends_str"
     [[ -n "$provides" ]] && echo "Provides: $provides"
     [[ -n "$conflicts" ]] && echo "Conflicts: $conflicts"
     [[ -n "$replaces" ]] && echo "Replaces: $replaces"

@@ -45,6 +45,14 @@ std::string trim(const std::string& s) {
     return s.substr(a, b - a + 1);
 }
 
+// ubuntu-drivers-common is a Recommends, not a hard Depends (it doesn't
+// exist on stock Debian at all) -- distinguish "ubuntu-drivers isn't
+// installed" from "this GPU genuinely needs no separate driver package",
+// which look identical from queryDrivers()' empty result alone.
+bool ubuntuDriversAvailable() {
+    return !execCmd("command -v ubuntu-drivers 2>/dev/null").empty();
+}
+
 std::string jsonEscape(const std::string& s) {
     std::string out;
     for (char c : s) {
@@ -156,6 +164,14 @@ void DriverManager::listDrivers() {
     }
     std::cout << C_BOLD << "[hyprvisor] " << sysInfo_.gpus[0].name << C_RESET << "\n";
 
+    if (!ubuntuDriversAvailable()) {
+        std::cout << C_RED
+            << "  ubuntu-drivers not found -- install ubuntu-drivers-common "
+               "for driver management (Ubuntu/derivatives only, not "
+               "available on stock Debian).\n" << C_RESET;
+        return;
+    }
+
     auto drivers = queryDrivers();
     if (drivers.empty()) {
         std::cout << C_GREEN
@@ -201,6 +217,15 @@ void DriverManager::listDriversJson() {
 }
 
 bool DriverManager::installBestDriver(bool noConfirm) {
+    if (!ubuntuDriversAvailable()) {
+        std::cerr << C_RED
+            << "[hyprvisor] ubuntu-drivers not found -- install "
+               "ubuntu-drivers-common for driver management (Ubuntu/"
+               "derivatives only, not available on stock Debian).\n"
+            << C_RESET;
+        return false;
+    }
+
     auto drivers = queryDrivers();
     if (drivers.empty()) {
         std::cout << C_GREEN

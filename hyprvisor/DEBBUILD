@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=hyprvisor
 pkgver=26.8
-pkgrel=3
+pkgrel=4
 pkgdesc="GPU driver manager CLI + GTK GUI for pearOS, wrapping ubuntu-drivers"
 arch=('amd64' 'arm64')
 url="https://github.com/alxb421/hyprvisor"
@@ -16,13 +16,22 @@ builddepends=(
 )
 
 depends=(
-    ubuntu-drivers-common
     hwdata
     pciutils
     python3
     python3-gi
     gir1.2-gtk-3.0
     policykit-1
+)
+
+# ubuntu-drivers-common is Ubuntu/derivatives-only -- confirmed absent from
+# stock Debian's own archive (apt-cache madison shows only archive.ubuntu.com
+# sources, no debian.org entry at all). Recommends instead of a hard depends
+# so the .deb still installs on stock Debian; driver_manager.cpp already
+# detects its absence at runtime and reports that clearly instead of the
+# misleading "nothing to install" message.
+recommends=(
+    ubuntu-drivers-common
 )
 
 build() {

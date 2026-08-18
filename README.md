@@ -37,6 +37,11 @@ A `DEBBUILD` declares:
 - `builddepends=()` — apt packages needed only to build (not recorded in the `.deb`)
 - `depends=()` — extra runtime deps beyond what `dpkg-shlibdeps` auto-detects
   from the binaries `package()` installs
+- `recommends=()` — soft deps (`Recommends:`): apt installs them by default
+  but won't refuse to install the package without them. Use this instead of
+  `depends=()` for anything not available on every target distro (e.g.
+  Ubuntu-only packages when the .deb itself should still install on stock
+  Debian, just with that one feature inert)
 - `build()` — same as in a PKGBUILD: build the software
 - `package()` — install the build output into `$pkgdir` (`$DESTDIR`-style)
 - `depends_exclude=()` / `provides` / `conflicts` / `replaces` / `preinst` /
