@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=system-settings
 pkgver=26.7.0
-pkgrel=5
+pkgrel=6
 pkgdesc="pearOS System Settings application (Qt6/QML)"
 arch=('amd64' 'arm64')
 url="https://pearos.xyz"
@@ -22,17 +22,23 @@ builddepends=(
 
 # fprintd/power-profiles-daemon/jq: same package names as Arch, called by
 # touchidmanager.cpp/batterymanager.cpp/pearID scripts via their CLI tools.
-# qt6-5compat: ships the Qt5Compat.GraphicalEffects QML module, loaded
-# dynamically at runtime -- dpkg-shlibdeps doesn't see that (only what's
-# directly linked), so it needs to be declared by hand. qt6-declarative
-# (QtQuick.Effects) IS auto-detected already, no manual entry needed for it.
+# qml6-module-qt5compat-graphicaleffects: ships the Qt5Compat.GraphicalEffects
+# QML module, loaded dynamically at runtime -- dpkg-shlibdeps doesn't see
+# that (only what's directly linked), so it needs to be declared by hand.
+# NOT qt6-5compat: that binary package name only exists in KDE neon's own
+# overlay repo (archive.neon.kde.org) - confirmed absent from stock
+# Ubuntu/Debian via apt-cache madison. qml6-module-qt5compat-graphicaleffects
+# is the real, portable package: self-contained on stock Ubuntu/Debian, and
+# a thin transitional shim pulling in qt6-5compat on neon specifically --
+# works either way. qt6-declarative (QtQuick.Effects) IS auto-detected
+# already, no manual entry needed for it.
 # piri-base (Arch-only bundled model data package) dropped: PiriManager
 # already handles the model being absent and offers to download it.
 depends=(
     fprintd
     power-profiles-daemon
     jq
-    qt6-5compat
+    qml6-module-qt5compat-graphicaleffects
 )
 
 build() {

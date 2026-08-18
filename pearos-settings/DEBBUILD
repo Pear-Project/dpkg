@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-settings
 pkgver=26.7.0
-pkgrel=2
+pkgrel=3
 pkgdesc="Settings for pearOS Goldwing"
 arch=('all')
 url="https://github.com/pearOS-archlinux/pearos-settings"
@@ -25,11 +25,15 @@ builddepends=()
 # installing this will fail until they are too, same situation
 # pearos-window-borders was in before pearos-muternvf/pearos-window-tinter
 # existed.
+#
+# pearos-appstore is Arch/AUR-specific (no such package on apt.pearos.xyz,
+# confirmed against the repo's own Packages index) - the Debian edition
+# uses gnome-software instead, so this depends on that in its place.
 depends=(
     konsole
     kmail
     pearos-notes
-    pearos-appstore
+    gnome-software
     pearos-calendar
     pearos-contacts
     pearos-notch
