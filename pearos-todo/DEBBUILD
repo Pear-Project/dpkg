@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-todo
 pkgver=26.7.0
-pkgrel=2
+pkgrel=3
 pkgdesc="pearOS ToDo - modern Qt6 to-do application for pearOS"
 arch=('amd64' 'arm64')
 url="https://github.com/arch-linux-gui/pearos-todo"

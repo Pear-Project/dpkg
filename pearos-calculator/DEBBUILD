@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-calculator
 pkgver=26.1
-pkgrel=2
+pkgrel=3
 pkgdesc="pearOS Calculator"
 arch=('amd64' 'arm64')
 url="https://pearos.xyz"

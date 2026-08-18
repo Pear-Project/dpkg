@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=hyprvisor
 pkgver=26.8
-pkgrel=2
+pkgrel=3
 pkgdesc="GPU driver manager CLI + GTK GUI for pearOS, wrapping ubuntu-drivers"
 arch=('amd64' 'arm64')
 url="https://github.com/alxb421/hyprvisor"

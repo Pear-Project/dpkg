@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-dock
 pkgver=26.6.10
-pkgrel=3
+pkgrel=4
 pkgdesc="Tahoe-style dock for KDE Plasma 6"
 arch=('amd64' 'arm64')
 url="https://github.com/pearOS-ArchLinux/pearos-dock"

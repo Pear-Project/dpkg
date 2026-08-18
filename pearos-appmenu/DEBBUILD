@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-appmenu
 pkgver=26.5
-pkgrel=2
+pkgrel=3
 pkgdesc="Global Menu applet for Plasma Desktop (pearOS custom build)"
 arch=('amd64' 'arm64')
 url="https://invent.kde.org/plasma/plasma-workspace"
