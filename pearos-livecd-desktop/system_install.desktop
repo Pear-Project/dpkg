@@ -6,5 +6,5 @@ GenericName=pearOS Installer
 Keywords=system;installer;
 Exec=bash bin_install
 Comment=pearOS installer
-Icon=nicec0re-logo
+Icon=/usr/share/pixmaps/pearos-logo.png
 Terminal=false

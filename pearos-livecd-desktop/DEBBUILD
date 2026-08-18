@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-livecd-desktop
 pkgver=22.03
-pkgrel=1
+pkgrel=2
 pkgdesc="Default pearOS installer shortcut for the live desktop"
 arch=('all')
 url="https://github.com/pearOS-archlinux/pearos-livecd-desktop"
@@ -10,10 +10,12 @@ section="misc"
 priority="optional"
 maintainer="Alexandru Balan <alxb421@gmail.com>"
 
-# Exec=bash bin_install references a script from the live-ISO airootfs
-# that isn't part of this repo - harmless to install ahead of that (just
-# an inert desktop icon until the ISO/installer side exists), but it
-# won't actually launch anything yet.
+# Exec=bash bin_install is now wired up on $PATH by the ISO build itself
+# (profiles/pear/customize.sh installs pearOS-installer's general_bin/
+# bin_install there), so this icon does launch something. Installed 0644
+# before, which KDE/Dolphin treats as an untrusted .desktop file needing a
+# manual "Allow Launching" right-click every time -- 0755 (the +x bit) is
+# what actually marks it trusted.
 builddepends=()
 depends=()
 
@@ -22,5 +24,5 @@ build() {
 }
 
 package() {
-    install -Dm644 "$startdir/system_install.desktop" "$pkgdir/etc/skel/Desktop/system_install.desktop"
+    install -Dm755 "$startdir/system_install.desktop" "$pkgdir/etc/skel/Desktop/system_install.desktop"
 }
