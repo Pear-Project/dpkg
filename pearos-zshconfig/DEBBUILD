@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-zshconfig
 pkgver=26.4.0
-pkgrel=1
+pkgrel=2
 pkgdesc="pearOS NiceC0re ZSH config file"
 arch=('all')
 url="https://pear-software.com"
@@ -10,8 +10,16 @@ section="shells"
 priority="optional"
 maintainer="Alexandru Balan <alxb421@gmail.com>"
 
+# .zshrc sources zsh-autosuggestions directly and shells out to `last` for
+# a login banner -- neither was declared here, so plain `apt install
+# pearos-zshconfig` on its own didn't pull in what its own .zshrc needs.
+# `last` also moved from util-linux to wtmpdb on modern Debian.
 builddepends=()
-depends=()
+depends=(
+    zsh
+    zsh-autosuggestions
+    wtmpdb
+)
 
 build() {
     :

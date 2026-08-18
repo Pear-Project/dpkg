@@ -20,7 +20,7 @@ bindkey "^[[1;5C" forward-word
 bindkey '^[[A' up-line-or-search
 bindkey '^[[B' down-line-or-search
 
-source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 
 bindkey '^[[C' forward-char
 
