@@ -168,7 +168,7 @@ toolBarFont=SF Pro Display,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
 Theme=MacTahoe-dark
 
 [KDE]
-LookAndFeelPackage=org.manjaro.breath-dark.desktop
+LookAndFeelPackage=pearOS-Dark
 ShowDeleteCommand=false
 widgetStyle=kvantum-dark
 
