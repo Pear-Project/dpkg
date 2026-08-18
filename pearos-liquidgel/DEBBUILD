@@ -1,9 +1,9 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-liquidgel
 pkgver=26.7
-pkgrel=3
+pkgrel=4
 pkgdesc="Fork of the KWin Blur effect for pearOS with additional features (including force blur) and bug fixes"
-arch=('amd64')
+arch=('amd64' 'arm64')
 url="https://github.com/pearOS-archlinux/liquid-gel"
 license="GPL-3"
 section="kde"

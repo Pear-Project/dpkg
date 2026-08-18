@@ -1,9 +1,9 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-magiclamp
 pkgver=26.6
-pkgrel=4
+pkgrel=5
 pkgdesc="KWin window minimization effect - Pearos Magic Lamp"
-arch=('amd64')
+arch=('amd64' 'arm64')
 url="https://github.com/koryboc/pearos-magiclamp"
 license="GPL-2"
 section="kde"

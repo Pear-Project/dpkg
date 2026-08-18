@@ -1,9 +1,9 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=system-overview
 pkgver=26.3
-pkgrel=1
+pkgrel=2
 pkgdesc="pearOS NiceC0re System Overview application (Qt6 native)"
-arch=('amd64')
+arch=('amd64' 'arm64')
 url="https://pearos.xyz"
 license="GPL-3"
 section="utils"

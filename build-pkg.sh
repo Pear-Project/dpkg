@@ -71,7 +71,26 @@ source "$debbuild"
 if [[ ${#arch[@]} -eq 0 ]]; then
     arch=("$(dpkg --print-architecture)")
 fi
-build_arch="${arch[0]}"
+
+# For a multi-arch DEBBUILD (e.g. arch=('amd64' 'arm64')), the actual output
+# architecture is whatever this runner really is, NOT just arch[0] -- CI
+# builds each arch on its own matching runner, and mislabeling an arm64
+# build as amd64 (or vice versa) would produce a broken .deb. arch=('all')
+# stays literally "all" (architecture-independent), the one case where the
+# host's real arch doesn't matter.
+if [[ "${#arch[@]}" -eq 1 && "${arch[0]}" == "all" ]]; then
+    build_arch="all"
+else
+    build_arch="$(dpkg --print-architecture)"
+    match=false
+    for a in "${arch[@]}"; do
+        [[ "$a" == "$build_arch" ]] && match=true && break
+    done
+    if ! $match; then
+        echo -e "${red}[ERROR]${nc} DEBBUILD declares arch=(${arch[*]}) but this runner is $build_arch" >&2
+        exit 1
+    fi
+fi
 
 builddir="$startdir/.dpkgbuild"
 srcdir="$builddir/src"

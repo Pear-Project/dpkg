@@ -1,9 +1,9 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-notch
 pkgver=26.6.1
-pkgrel=1
+pkgrel=2
 pkgdesc="Dynamic notch widget for Linux"
-arch=('amd64')
+arch=('amd64' 'arm64')
 url="https://pearos.xyz/"
 license="custom"
 section="utils"

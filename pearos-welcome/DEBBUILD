@@ -1,9 +1,9 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-welcome
 pkgver=26.8.0
-pkgrel=2
+pkgrel=3
 pkgdesc="pearOS Goldwing Welcome application"
-arch=('amd64')
+arch=('amd64' 'arm64')
 url="https://pear-software.com"
 license="MIT"
 section="utils"

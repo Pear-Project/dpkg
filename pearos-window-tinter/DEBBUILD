@@ -1,9 +1,9 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-window-tinter
 pkgver=26.8
-pkgrel=2
+pkgrel=3
 pkgdesc="KWin effect that tints window backgrounds with the wallpaper color behind them"
-arch=('amd64')
+arch=('amd64' 'arm64')
 url="https://pearos.xyz"
 license="GPL-2.0-or-later"
 section="kde"

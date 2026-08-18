@@ -19,7 +19,8 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      dirs: ${{ steps.changed.outputs.dirs }}
+      dirs_amd64: ${{ steps.changed.outputs.dirs_amd64 }}
+      dirs_arm64: ${{ steps.changed.outputs.dirs_arm64 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -86,14 +87,34 @@ jobs:
             done
           fi
 
-          json=$(printf '%s\n' "${result[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "Package dirs to build:"
-          echo "$json"
-          echo "dirs=$json" >> "$GITHUB_OUTPUT"
+          # Split by declared arch=() so each dir only builds on the
+          # runner(s) it actually supports. arch=('all') is architecture-
+          # independent - it's built once on the amd64 job and publish.sh
+          # already copies it into both x86_64 and aarch64 dirs, so it's
+          # deliberately NOT added to dirs_arm64 too (that would just be a
+          # redundant duplicate build+publish of the same .deb).
+          amd64=()
+          arm64=()
+          for dir in "${result[@]}"; do
+            archline=$(grep -E '^\s*arch=' "$dir/DEBBUILD" || true)
+            if [[ "$archline" == *all* ]]; then
+              amd64+=("$dir")
+            else
+              [[ "$archline" == *amd64* ]] && amd64+=("$dir")
+              [[ "$archline" == *arm64* ]] && arm64+=("$dir")
+            fi
+          done
 
-  build-and-publish:
+          json_amd64=$(printf '%s\n' "${amd64[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          json_arm64=$(printf '%s\n' "${arm64[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "amd64: $json_amd64"
+          echo "arm64: $json_arm64"
+          echo "dirs_amd64=$json_amd64" >> "$GITHUB_OUTPUT"
+          echo "dirs_arm64=$json_arm64" >> "$GITHUB_OUTPUT"
+
+  build-and-publish-amd64:
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.dirs != '[]' }}
+    if: ${{ needs.detect-changes.outputs.dirs_amd64 != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       # debian-package-repo is a shared git checkout pushed to at the end of
@@ -102,7 +123,7 @@ jobs:
       max-parallel: 1
       fail-fast: false
       matrix:
-        pkgdir: ${{ fromJson(needs.detect-changes.outputs.dirs) }}
+        pkgdir: ${{ fromJson(needs.detect-changes.outputs.dirs_amd64) }}
 
     container:
       image: debian:testing
@@ -121,6 +142,78 @@ jobs:
       # true sibling checkout (`../debian-package-repo`, like the local dev
       # layout) isn't possible in-CI. Nest it instead; publish.sh takes the
       # repo path as an argument either way.
+      - name: Checkout debian-package-repo
+        uses: actions/checkout@v4
+        with:
+          repository: Pear-Project/debian-package-repo
+          path: debian-package-repo
+          token: ${{ secrets.DEBIAN_REPO_DEPLOY_TOKEN }}
+
+      - name: Install build tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential dpkg-dev apt-utils gnupg2 file
+
+      - name: Build package
+        run: ./build-pkg.sh "${{ matrix.pkgdir }}"
+
+      - name: Import signing key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          echo "$GPG_PASSPHRASE" > /tmp/.gpg-passphrase
+          chmod 600 /tmp/.gpg-passphrase
+
+      - name: Configure git identity for the publish commit
+        working-directory: debian-package-repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Sign, update apt metadata, publish, push
+        env:
+          GPG_PASSPHRASE_FILE: /tmp/.gpg-passphrase
+        run: |
+          ./publish.sh "${{ matrix.pkgdir }}" \
+            --repo debian-package-repo \
+            --channel main \
+            --release latest \
+            --push
+
+      - name: Clean up passphrase
+        if: always()
+        run: rm -f /tmp/.gpg-passphrase
+
+  build-and-publish-arm64:
+    # Runs after the amd64 job (not in parallel with it) purely to keep
+    # publish.sh's git-push-retry story simple - two jobs racing to push to
+    # debian-package-repo at once is more retry-storm risk than it's worth.
+    needs: [detect-changes, build-and-publish-amd64]
+    if: ${{ always() && needs.detect-changes.outputs.dirs_arm64 != '[]' && needs.build-and-publish-amd64.result != 'failure' }}
+    # Free hosted Arm64 runner - GA for public repos, no QEMU/cross-compile
+    # needed since it's native hardware.
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        pkgdir: ${{ fromJson(needs.detect-changes.outputs.dirs_arm64) }}
+
+    container:
+      image: debian:testing
+
+    steps:
+      - name: Install git (required before checkout works in-container)
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git ca-certificates
+
+      - name: Checkout dpkg (this repo)
+        uses: actions/checkout@v4
+
       - name: Checkout debian-package-repo
         uses: actions/checkout@v4
         with:
