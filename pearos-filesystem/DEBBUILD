@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-filesystem
 pkgver=26.8
-pkgrel=1
+pkgrel=2
 pkgdesc="pearOS Goldwing branding (os-release, issue, logo) for Debian-based systems"
 arch=('all')
 url="https://pearos.xyz"
@@ -31,13 +31,22 @@ package() {
 
     # os-release and issue are owned by base-files on Debian/Ubuntu, so they
     # can't just be dropped in - preinst/postrm divert them properly instead.
+    #
+    # /etc/os-release ships as a symlink to ../usr/lib/os-release on Debian,
+    # and some readers (e.g. neofetch) check /usr/lib/os-release *before*
+    # /etc/os-release, breaking on the first match - diverting only /etc's
+    # copy left /usr/lib/os-release as the untouched, unbranded original,
+    # so those readers never saw pearOS branding at all. Divert both, from
+    # the same source file.
     install -Dm644 "$startdir/os-release" "$pkgdir/etc/os-release"
+    install -Dm644 "$startdir/os-release" "$pkgdir/usr/lib/os-release"
     install -Dm644 "$startdir/issue" "$pkgdir/etc/issue"
 }
 
 preinst="#!/bin/sh
 set -e
 dpkg-divert --package pearos-filesystem --add --rename --divert /etc/os-release.pearos-orig /etc/os-release >/dev/null
+dpkg-divert --package pearos-filesystem --add --rename --divert /usr/lib/os-release.pearos-orig /usr/lib/os-release >/dev/null
 dpkg-divert --package pearos-filesystem --add --rename --divert /etc/issue.pearos-orig /etc/issue >/dev/null
 exit 0
 "
@@ -47,6 +56,7 @@ set -e
 case \"\$1\" in
     remove)
         dpkg-divert --package pearos-filesystem --remove --rename --divert /etc/os-release.pearos-orig /etc/os-release >/dev/null
+        dpkg-divert --package pearos-filesystem --remove --rename --divert /usr/lib/os-release.pearos-orig /usr/lib/os-release >/dev/null
         dpkg-divert --package pearos-filesystem --remove --rename --divert /etc/issue.pearos-orig /etc/issue >/dev/null
         ;;
 esac
