@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=system-settings
 pkgver=26.7.0
-pkgrel=4
+pkgrel=5
 pkgdesc="pearOS System Settings application (Qt6/QML)"
 arch=('amd64' 'arm64')
 url="https://pearos.xyz"
@@ -39,7 +39,12 @@ build() {
     cmake -S "$startdir" -B "$srcdir/build" \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr
-    cmake --build "$srcdir/build" --parallel
+    # Capped at 2: unlimited parallelism here has repeatedly hung the CI
+    # runner (2 vCPU, container) for 15-47 minutes on this package's QML/
+    # resource-heavy build -- never reproduces locally on a machine with
+    # more cores, consistent with memory pressure from too many concurrent
+    # compile jobs rather than a real deadlock.
+    cmake --build "$srcdir/build" --parallel 2
 }
 
 package() {
