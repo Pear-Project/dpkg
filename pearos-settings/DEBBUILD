@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-settings
 pkgver=26.7.0
-pkgrel=4
+pkgrel=5
 pkgdesc="Settings for pearOS Goldwing"
 arch=('all')
 url="https://github.com/pearOS-archlinux/pearos-settings"
