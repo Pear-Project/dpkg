@@ -68,9 +68,15 @@
       <default>true</default>
     </entry>
 
-    <!-- hairline separator below the titlebar -->
-    <entry name="ShowHairline" type = "Bool">
-      <default>true</default>
+    <!-- hairline separator below the titlebar: always off, always on, or
+         faded in/out on titlebar hover -->
+    <entry name="HairlineMode" type = "Enum">
+      <choices>
+          <choice name="HairlineOff"/>
+          <choice name="HairlineOn"/>
+          <choice name="HairlineAuto"/>
+      </choices>
+      <default>HairlineOn</default>
     </entry>
   </group>
 

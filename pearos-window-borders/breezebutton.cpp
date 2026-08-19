@@ -340,25 +340,32 @@ namespace Breeze
         if (!d) return;
 
         // the magic lamp animation is tied to the window geometry, and looks broken when a
-        // window is minimized from the close button, so it is unloaded around the request
-        bool restoreMagicLamp(false);
+        // window is minimized from the close button, so it is unloaded around the request.
+        // pearOS's own magic lamp effect is preferred; the stock KDE one is the fallback for
+        // systems where the pearOS effect isn't installed or loaded.
+        QString effectToRestore;
         if (d->internalSettings()->closeMinimizeSkipMagicLamp())
         {
             auto interface = effectsInterface();
-            const QDBusReply<bool> loaded = interface.call(QStringLiteral("isEffectLoaded"), QStringLiteral("magiclamp"));
-            if (loaded.isValid() && loaded.value())
+            static const QString candidates[] = { QStringLiteral("kwin4_effect_pearosmagiclamp"), QStringLiteral("magiclamp") };
+            for (const QString &candidate : candidates)
             {
-                interface.call(QStringLiteral("unloadEffect"), QStringLiteral("magiclamp"));
-                restoreMagicLamp = true;
+                const QDBusReply<bool> loaded = interface.call(QStringLiteral("isEffectLoaded"), candidate);
+                if (loaded.isValid() && loaded.value())
+                {
+                    interface.call(QStringLiteral("unloadEffect"), candidate);
+                    effectToRestore = candidate;
+                    break;
+                }
             }
         }
 
         d->requestMinimize();
 
-        if (restoreMagicLamp)
+        if (!effectToRestore.isEmpty())
         {
-            QTimer::singleShot(500, this, []() {
-                effectsInterface().call(QStringLiteral("loadEffect"), QStringLiteral("magiclamp"));
+            QTimer::singleShot(500, this, [effectToRestore]() {
+                effectsInterface().call(QStringLiteral("loadEffect"), effectToRestore);
             });
         }
 
