@@ -349,6 +349,15 @@ void PearosTinterEffect::retintAll()
     }
 }
 
+#ifdef KWIN_DRAWWINDOW_RETURNS_BOOL
+bool PearosTinterEffect::drawWindow(const RenderTarget &renderTarget,
+                                    const RenderViewport &viewport,
+                                    EffectWindow *window,
+                                    int mask,
+                                    const Region &deviceRegion,
+                                    WindowPaintData &data)
+{
+#else
 void PearosTinterEffect::drawWindow(const RenderTarget &renderTarget,
                                     const RenderViewport &viewport,
                                     EffectWindow *window,
@@ -356,6 +365,7 @@ void PearosTinterEffect::drawWindow(const RenderTarget &renderTarget,
                                     const Region &deviceRegion,
                                     WindowPaintData &data)
 {
+#endif
     auto state = m_windows.constFind(window);
     if (state != m_windows.constEnd() && state->tint.isValid()) {
         const QRectF geometry = window->expandedGeometry();
@@ -379,5 +389,9 @@ void PearosTinterEffect::drawWindow(const RenderTarget &renderTarget,
         ShaderManager::instance()->popShader();
     }
 
+#ifdef KWIN_DRAWWINDOW_RETURNS_BOOL
+    return OffscreenEffect::drawWindow(renderTarget, viewport, window, mask, deviceRegion, data);
+#else
     OffscreenEffect::drawWindow(renderTarget, viewport, window, mask, deviceRegion, data);
+#endif
 }

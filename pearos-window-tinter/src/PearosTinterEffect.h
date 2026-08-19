@@ -44,12 +44,26 @@ public:
     static bool supported();
 
     void reconfigure(ReconfigureFlags flags) override;
+
+    // KWin changed OffscreenEffect::drawWindow() to return bool (whether the
+    // window was actually painted) instead of void. KWIN_DRAWWINDOW_RETURNS_BOOL
+    // is set by the CMake probe to match the installed KWin so `override`
+    // stays correct on both old and new KWin versions.
+#ifdef KWIN_DRAWWINDOW_RETURNS_BOOL
+    bool drawWindow(const KWin::RenderTarget &renderTarget,
+                    const KWin::RenderViewport &viewport,
+                    KWin::EffectWindow *window,
+                    int mask,
+                    const KWin::Region &deviceRegion,
+                    KWin::WindowPaintData &data) override;
+#else
     void drawWindow(const KWin::RenderTarget &renderTarget,
                     const KWin::RenderViewport &viewport,
                     KWin::EffectWindow *window,
                     int mask,
                     const KWin::Region &deviceRegion,
                     KWin::WindowPaintData &data) override;
+#endif
 
     int requestedEffectChainPosition() const override;
     bool isActive() const override;
