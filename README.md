@@ -162,3 +162,4 @@ asset instead, downloaded and installed manually rather than via `apt`.
 | `pearos-welcome` | pearOS Goldwing Welcome application (Qt6/KF6 port of `plasma-welcome`) - apt-based update/keyring flow instead of pacman-key |
 | `hyprvisor` | GPU driver manager CLI + GTK GUI, wraps `ubuntu-drivers` instead of carrying its own Arch/AUR NVIDIA package database (Arch's `wifiutil` was **not** ported - no apt equivalent for its Realtek DKMS drivers) |
 | `system-settings` | pearOS System Settings application (Qt6/QML) - Arch pkgbuilds dir is `pearos-settings-app`; apt-based Software Update page instead of pacman/checkupdates |
+| `pafari` | pearOS web browser - GNOME Web/Epiphany fork, vendored from `pearOS-archlinux/pafari` |
