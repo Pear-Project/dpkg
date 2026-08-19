@@ -41,5 +41,5 @@ void PearosMagicLampEffectKCM::save()
     OrgKdeKwinEffectsInterface interface(QStringLiteral("org.kde.KWin"),
         QStringLiteral("/Effects"),
         QDBusConnection::sessionBus());
-    interface.reconfigureEffect(QStringLiteral("libkwin4_effect_pearosmagiclamp"));
+    interface.reconfigureEffect(QStringLiteral("kwin4_effect_pearosmagiclamp"));
 }

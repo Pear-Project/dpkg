@@ -12,6 +12,15 @@ kconfig_add_kcfg_files(effect_SRCS
 
 add_library(kwin4_effect_pearosmagiclamp SHARED ${effect_SRCS})
 
+# CMake's default "lib" prefix makes the installed filename
+# (libkwin4_effect_pearosmagiclamp.so) disagree with the plugin Id KWin
+# derives from it (kwin4_effect_pearosmagiclamp, from metadata.json). KWin's
+# effect loader then can't reliably resolve the plugin: it warns about the Id
+# mismatch and isEffectSupported()/loadEffect() fail. Match how the other
+# kwin effect plugins on this system are built (e.g. magiclamp.so) by
+# dropping the prefix.
+set_target_properties(kwin4_effect_pearosmagiclamp PROPERTIES PREFIX "")
+
 if(KWIN_PREPAINT_HAS_PRESENT_TIME)
     target_compile_definitions(kwin4_effect_pearosmagiclamp
         PRIVATE KWIN_PREPAINT_HAS_PRESENT_TIME)
