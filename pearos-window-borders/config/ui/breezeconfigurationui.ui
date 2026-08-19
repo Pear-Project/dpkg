@@ -215,11 +215,36 @@
         </widget>
        </item>
        <item row="6" column="0" colspan="3">
-        <widget class="QCheckBox" name="macOSButtons">
-         <property name="text">
-          <string>macOS-like buttons</string>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout_macOSButtons">
+         <item>
+          <widget class="QCheckBox" name="macOSButtons">
+           <property name="text">
+            <string>macOS-like buttons</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="trafficLightStyle">
+           <item>
+            <property name="text">
+             <string comment="@item:inlistbox macOS-like button style">Pahoe</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string comment="@item:inlistbox macOS-like button style">Goldwing (latest)</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_macOSButtons">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </spacer>
+         </item>
+        </layout>
        </item>
        <item row="7" column="0" colspan="3">
         <widget class="QCheckBox" name="roundedCorners">
@@ -766,6 +791,12 @@
      <y>188</y>
     </hint>
    </hints>
+  </connection>
+  <connection>
+   <sender>macOSButtons</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>trafficLightStyle</receiver>
+   <slot>setEnabled(bool)</slot>
   </connection>
  </connections>
 </ui>

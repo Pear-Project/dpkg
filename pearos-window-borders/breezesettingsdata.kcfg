@@ -142,6 +142,17 @@
         <default>true</default>
     </entry>
 
+    <!-- visual style of the traffic-light buttons (only used when MacOSButtons
+         is on): Pahoe is the flat-fill original, Goldwing is the glossy
+         gradient one with filled hover glyphs -->
+    <entry name="TrafficLightStyle" type = "Enum">
+      <choices>
+          <choice name="StylePahoe"/>
+          <choice name="StyleGoldwing"/>
+      </choices>
+      <default>StyleGoldwing</default>
+    </entry>
+
     <entry name="BackgroundOpacity" type = "Int">
         <default>100</default>
     </entry>

@@ -60,6 +60,7 @@ namespace Breeze
         connect(m_ui.showOutline, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
         connect(m_ui.showSnapMenu, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
         connect(m_ui.macOSButtons, SIGNAL(clicked()), SLOT(updateChanged()) );
+        connect(m_ui.trafficLightStyle, SIGNAL(currentIndexChanged(int)), SLOT(updateChanged()));
         connect(m_ui.opacitySpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [this](int /*i*/) {updateChanged();});
         connect(m_ui.gradientSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [this](int /*i*/) {updateChanged();});
 
@@ -112,6 +113,8 @@ namespace Breeze
         m_ui.animationsEnabled->setChecked(m_internalSettings->animationsEnabled());
         m_ui.animationsDuration->setValue(m_internalSettings->animationsDuration());
         m_ui.macOSButtons->setChecked(m_internalSettings->macOSButtons());
+        m_ui.trafficLightStyle->setCurrentIndex(m_internalSettings->trafficLightStyle());
+        m_ui.trafficLightStyle->setEnabled(m_internalSettings->macOSButtons());
         m_ui.opacitySpinBox->setValue(m_internalSettings->backgroundOpacity());
         m_ui.gradientSpinBox->setValue(m_internalSettings->backgroundGradientIntensity());
 
@@ -186,6 +189,7 @@ namespace Breeze
         m_internalSettings->setAnimationsEnabled(m_ui.animationsEnabled->isChecked());
         m_internalSettings->setAnimationsDuration(m_ui.animationsDuration->value());
         m_internalSettings->setMacOSButtons(m_ui.macOSButtons->isChecked());
+        m_internalSettings->setTrafficLightStyle(m_ui.trafficLightStyle->currentIndex());
         m_internalSettings->setBackgroundOpacity(m_ui.opacitySpinBox->value());
         m_internalSettings->setBackgroundGradientIntensity(m_ui.gradientSpinBox->value());
 
@@ -274,6 +278,8 @@ namespace Breeze
         m_ui.animationsEnabled->setChecked(m_internalSettings->animationsEnabled());
         m_ui.animationsDuration->setValue(m_internalSettings->animationsDuration());
         m_ui.macOSButtons->setChecked(m_internalSettings->macOSButtons());
+        m_ui.trafficLightStyle->setCurrentIndex(m_internalSettings->trafficLightStyle());
+        m_ui.trafficLightStyle->setEnabled(m_internalSettings->macOSButtons());
         m_ui.opacitySpinBox->setValue(m_internalSettings->backgroundOpacity());
         m_ui.gradientSpinBox->setValue(m_internalSettings->backgroundGradientIntensity());
 
@@ -322,6 +328,8 @@ namespace Breeze
         QFont f; f.fromString(m_internalSettings->titleBarFont());
 
         if (m_ui.macOSButtons->isChecked() != m_internalSettings->macOSButtons())
+            modified = true;
+        if (m_ui.trafficLightStyle->currentIndex() != m_internalSettings->trafficLightStyle())
             modified = true;
         if (m_ui.titleAlignment->currentIndex() != m_internalSettings->titleAlignment())
             modified = true;

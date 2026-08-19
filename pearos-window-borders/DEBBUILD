@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=pearos-window-borders
 pkgver=26.8.0
-pkgrel=4
+pkgrel=5
 pkgdesc="pearOS-style KWin window border"
 arch=('amd64' 'arm64')
 url="https://pearos.xyz"
