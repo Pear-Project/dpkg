@@ -218,8 +218,16 @@ jobs:
       matrix:
         pkgdir: ${{ fromJson(needs.detect-changes.outputs.dirs_arm64) }}
 
+    # KDE neon (used on amd64, see that job) has never published an arm64
+    # track - archive.neon.kde.org/unstable's arm64 Packages index doesn't
+    # carry kwin-dev or libkdecorations3-dev at all. Left on debian:testing
+    # here, same as before this fix: it does have both packages, matching
+    # the state the arm64 job was already in before this change. Whether
+    # that's the correct KWin ABI for real arm64 pearOS devices is still
+    # unverified - unlike amd64, there's no known-good arm64 pearOS
+    # machine this was cross-checked against.
     container:
-      image: ubuntu:24.04
+      image: debian:testing
 
     steps:
       - name: Install git (required before checkout works in-container)
@@ -236,19 +244,6 @@ jobs:
           repository: Pear-Project/debian-package-repo
           path: debian-package-repo
           token: ${{ secrets.DEBIAN_REPO_DEPLOY_TOKEN }}
-
-      # See the amd64 job for why: pearOS's real kwin-dev comes from KDE
-      # neon's unstable repo, not Ubuntu/Debian, and a kwin effect plugin's
-      # embedded Qt IID must match it exactly or KWin refuses to load the
-      # plugin on the real target even though it built cleanly.
-      - name: Add KDE neon unstable apt repo (matches pearOS's real KWin ABI)
-        run: |
-          apt-get update
-          apt-get install -y --no-install-recommends ca-certificates gnupg wget
-          mkdir -p /etc/apt/keyrings
-          wget -qO- https://origin.archive.neon.kde.org/public.key | gpg --dearmor -o /etc/apt/keyrings/neon-archive-keyring.gpg
-          echo "deb [signed-by=/etc/apt/keyrings/neon-archive-keyring.gpg] http://archive.neon.kde.org/unstable noble main" > /etc/apt/sources.list.d/neon.list
-          apt-get update
 
       - name: Install build tools
         run: |
