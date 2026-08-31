@@ -1,7 +1,7 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=system-settings
 pkgver=26.7.0
-pkgrel=8
+pkgrel=9
 pkgdesc="pearOS System Settings application (Qt6/QML)"
 arch=('amd64' 'arm64')
 url="https://pearos.xyz"

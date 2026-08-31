@@ -54,4 +54,5 @@ private:
     QString m_scriptDir;
     void run(const QString &cmd, std::function<void(QString, int)> cb);
     void fetchUserInfo();
+    void syncAvatarSystemWideIfChanged(const QString &avatarPath);
 };

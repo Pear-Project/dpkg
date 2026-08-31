@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QFile>
 #include <QVariantMap>
+#include <QCryptographicHash>
 
 // Persisted "was last known logged in" marker, so a network hiccup on the
 // very first check of a session doesn't have to guess between logged-in and
@@ -11,6 +12,12 @@ static QString lastOkMarkerPath() {
     QString dir = QDir::homePath() + "/.cache/pearos-settings";
     QDir().mkpath(dir);
     return dir + "/pearid_last_ok";
+}
+
+static QByteArray fileHash(const QString &path) {
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly)) return QByteArray();
+    return QCryptographicHash::hash(f.readAll(), QCryptographicHash::Sha256);
 }
 
 static QString findScriptDir() {
@@ -98,9 +105,58 @@ void PearIDManager::fetchUserInfo() {
             if (QFile::exists(path)) {
                 m_avatarPath = path;
                 emit userInfoChanged();
+                syncAvatarSystemWideIfChanged(path);
             }
         }
     });
+}
+
+// The download above only ever landed the PearID avatar in
+// ~/.pearid_avatars/avatar.webp for this class's own m_avatarPath (used by
+// the QML account page) - it never reached the actual places the rest of
+// the system reads a user's picture from: ~/.face.icon, AccountsService
+// (what SDDM's user list reads - homes are 0700, so the sddm daemon user
+// can't stat ~/.face.icon directly), or the SDDM theme faces/images
+// fallback. Those are exactly the targets post_setup writes at install
+// time for the wizard-chosen picture, which is why the PearID avatar never
+// visibly "took" anywhere that matters. Hash-gated so this doesn't pkexec-
+// prompt on every login/Settings-open once the two are already in sync -
+// only when the PearID avatar actually differs from what's currently set.
+void PearIDManager::syncAvatarSystemWideIfChanged(const QString &avatarPath) {
+    QString facePath = QDir::homePath() + "/.face.icon";
+    if (QFile::exists(facePath) && fileHash(facePath) == fileHash(avatarPath)) {
+        return;
+    }
+
+    QString username = qEnvironmentVariable("USER");
+    if (username.isEmpty()) username = qEnvironmentVariable("LOGNAME");
+    if (username.isEmpty()) return;
+
+    // ~/.face.icon lives in the user's own home - no privilege needed.
+    QFile::remove(facePath);
+    QFile::copy(avatarPath, facePath);
+
+    // Everything else lives under root-owned paths - only reachable via pkexec.
+    QString escAvatar = QString(avatarPath).replace("'", "'\\''");
+    QString escUser   = QString(username).replace("'", "'\\''");
+    QString cmd = QString(
+        "mkdir -p /var/lib/AccountsService/icons /var/lib/AccountsService/users && "
+        "cp -f '%1' '/var/lib/AccountsService/icons/%2' && "
+        "chmod 0644 '/var/lib/AccountsService/icons/%2' && "
+        "printf '[User]\\nIcon=/var/lib/AccountsService/icons/%2\\nSystemAccount=false\\n' "
+        "> '/var/lib/AccountsService/users/%2' && "
+        "chmod 0600 '/var/lib/AccountsService/users/%2' && "
+        "for t in pearOS pearOS-dark; do for s in faces images; do "
+        "mkdir -p \"/usr/share/sddm/themes/$t/$s\" && "
+        "cp -f '%1' \"/usr/share/sddm/themes/$t/$s/.face.icon\"; done; done"
+    ).arg(escAvatar, escUser);
+
+    auto *proc = new QProcess(this);
+    proc->start("pkexec", {"bash", "-c", cmd});
+    connect(proc, &QProcess::finished, this, [proc](int, QProcess::ExitStatus) {
+        proc->deleteLater();
+    });
+    connect(proc, &QProcess::errorOccurred, proc, &QProcess::deleteLater);
 }
 
 void PearIDManager::fetchExtendedInfo() {
