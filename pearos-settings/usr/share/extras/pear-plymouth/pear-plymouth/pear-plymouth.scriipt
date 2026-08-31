@@ -133,7 +133,7 @@ if (Plymouth.GetMode () == "boot")
 
   progress_box.x = Window.GetX() + Window.GetWidth() / 2 - progress_box.image.GetWidth() / 2;
   #change here
-  progress_box.y = Window.GetY() + Window.GetHeight() * 0.65 - progress_box.image.GetHeight() / 2;
+  progress_box.y = Window.GetY() + Window.GetHeight() * 0.92 - progress_box.image.GetHeight() / 2;
   progress_box.sprite.SetPosition(progress_box.x, progress_box.y, 0);
 
   progress_bar.original_image = Image("progress_bar.png");
@@ -141,7 +141,7 @@ if (Plymouth.GetMode () == "boot")
 
   progress_bar.x = Window.GetX() + Window.GetWidth()  / 2 -        progress_bar.original_image.GetWidth() / 2;
   #change here
-  progress_bar.y = Window.GetY() + Window.GetHeight() / 2 * 1.3                                                                                                                                                                                                 - progress_box.image.GetHeight() / 2 + (progress_box.image.GetHeight() - progress_bar.original_image.GetHeight()) / 2;
+  progress_bar.y = Window.GetY() + Window.GetHeight() * 0.92 - progress_box.image.GetHeight() / 2 + (progress_box.image.GetHeight() - progress_bar.original_image.GetHeight()) / 2;
   progress_bar.sprite.SetPosition(progress_bar.x, progress_bar.y, 1);
 
   fun progress_callback (duration, progress)
