@@ -494,21 +494,42 @@ apply_components() {
     msg "gsettings unavailable (skip GTK)"
   fi
 
-  # Fallback for GTK3/GTK4 apps that ignore gsettings
+  # Fallback for GTK3/GTK4 apps that ignore gsettings.
+  #
+  # This used to `cat > ... <<EOF` the whole file with only these 4 keys,
+  # which silently dropped gtk-decoration-layout (and anything else
+  # pearos-settings or the user had in there) on every theme switch --
+  # GTK apps' own client-side-drawn header bars would lose the
+  # close/minimize/maximize-on-the-left layout and fall back to a generic
+  # right-side order. Update just the keys this function owns instead, the
+  # same set/insert-if-missing pattern configure_gtk_kvantum() already uses
+  # for gtk-theme-name below, so any other key already in the file survives.
   write_gtk_ini() {
     local target_dir="$1"
     local theme="$2"
     local icon="$3"
     local cursor="$4"
     local prefer_dark="$5"
+    local ini="$target_dir/settings.ini"
     mkdir -p "$target_dir"
-    cat > "$target_dir/settings.ini" <<EOF
-[Settings]
-gtk-theme-name=$theme
-gtk-icon-theme-name=$icon
-gtk-cursor-theme-name=$cursor
-gtk-application-prefer-dark-theme=$prefer_dark
-EOF
+    if [ ! -f "$ini" ]; then
+      printf '[Settings]\n' > "$ini"
+    fi
+    set_ini_key() {
+      local key="$1" value="$2"
+      if grep -q "^${key}=" "$ini" 2>/dev/null; then
+        sed -i "s|^${key}=.*|${key}=${value}|" "$ini"
+      else
+        if ! grep -q '^\[Settings\]' "$ini" 2>/dev/null; then
+          printf '[Settings]\n' >> "$ini"
+        fi
+        printf '%s=%s\n' "$key" "$value" >> "$ini"
+      fi
+    }
+    set_ini_key gtk-theme-name "$theme"
+    set_ini_key gtk-icon-theme-name "$icon"
+    set_ini_key gtk-cursor-theme-name "$cursor"
+    set_ini_key gtk-application-prefer-dark-theme "$prefer_dark"
   }
   local prefer_dark_val
   if [ "$mode" = "dark" ]; then
