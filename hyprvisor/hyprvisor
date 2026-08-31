@@ -1,0 +1,168 @@
+#!/bin/bash
+set -euo pipefail
+
+STATE_DIR=/var/lib/hyprvisor
+LOCK="$STATE_DIR/lock"
+
+log() {
+    logger -t hyprvisor -- "$*"
+    printf '%s\n' "$*" >&2
+}
+
+pci_ids() {
+    local dev vendor device
+    shopt -s nullglob
+    for dev in /sys/bus/pci/devices/*/; do
+        if [ ! -r "${dev}vendor" ] || [ ! -r "${dev}device" ]; then
+            continue
+        fi
+        vendor="$(<"${dev}vendor")"
+        device="$(<"${dev}device")"
+        printf '%s %s\n' "${vendor#0x}" "${device#0x}" | tr 'A-F' 'a-f'
+    done
+}
+
+nvidia_device_id() {
+    pci_ids | awk '$1=="10de"{print $2; exit}'
+}
+
+nvidia_device_label() {
+    lspci -d 10de: -mm 2>/dev/null | head -1 | sed -E 's/^[0-9a-f:.]+ "[^"]*" "([^"]*)" "([^"]*)".*/\1 \2/'
+}
+
+# Debian ships one driver metapackage per GPU generation (current
+# nvidia-driver for recent cards, nvidia-tesla-470-driver for
+# Kepler..Turing, nvidia-legacy-390xx-driver for Fermi/G8x-GT2xx, etc.) --
+# offering plain nvidia-driver to every NVIDIA card regardless of age would
+# recommend a package that doesn't support (and may not even install
+# cleanly for) an older GPU. Same technique as broadcom_sta_supported_ids:
+# read each candidate's own Modaliases field instead of hardcoding which
+# generation covers which chip.
+nvidia_matching_package() {
+    local device pkg entry
+    device="$(nvidia_device_id)"
+    [ -n "$device" ] || return 1
+
+    while read -r pkg; do
+        [ -n "$pkg" ] || continue
+        entry="$(apt-cache show "$pkg" 2>/dev/null | grep -m1 '^Modaliases:')"
+        [ -n "$entry" ] || continue
+        if grep -qiE "d0000${device}sv" <<<"$entry"; then
+            printf '%s\n' "$pkg"
+            return 0
+        fi
+    done < <(apt-cache pkgnames nvidia 2>/dev/null \
+        | grep -E '^nvidia-(driver|tesla-[0-9]+-driver|legacy-[0-9]+xx-driver)$')
+    return 1
+}
+
+broadcom_sta_supported_ids() {
+    apt-cache show broadcom-sta-dkms 2>/dev/null \
+        | grep -m1 '^Modaliases:' \
+        | grep -oE 'v0000[0-9A-Fa-f]{4}d0000[0-9A-Fa-f]{4}' \
+        | sed -E 's/v0000([0-9A-Fa-f]{4})d0000([0-9A-Fa-f]{4})/\1 \2/' \
+        | tr 'A-F' 'a-f'
+}
+
+has_supported_broadcom() {
+    local supported present
+    supported="$(broadcom_sta_supported_ids)"
+    [ -n "$supported" ] || return 1
+    present="$(pci_ids)"
+    [ -n "$present" ] || return 1
+    comm -12 <(sort -u <<<"$supported") <(sort -u <<<"$present") | grep -q .
+}
+
+broadcom_device_label() {
+    lspci -d 14e4: -mm 2>/dev/null | head -1 | sed -E 's/^[0-9a-f:.]+ "[^"]*" "([^"]*)" "([^"]*)".*/\1 \2/'
+}
+
+package_installed() {
+    dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -q '^install ok installed$'
+}
+
+json_escape() {
+    sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' <<<"$1"
+}
+
+cmd_list_json() {
+    local first=true nvidia_pkg
+    printf '['
+    nvidia_pkg="$(nvidia_matching_package || true)"
+    if [ -n "$nvidia_pkg" ]; then
+        $first || printf ','
+        first=false
+        printf '{"id":"nvidia","label":"%s","package":"%s","installed":%s}' \
+            "$(json_escape "$(nvidia_device_label)")" \
+            "$nvidia_pkg" \
+            "$(package_installed "$nvidia_pkg" && echo true || echo false)"
+    fi
+    if has_supported_broadcom; then
+        $first || printf ','
+        first=false
+        printf '{"id":"broadcom","label":"%s","package":"broadcom-sta-dkms","installed":%s}' \
+            "$(json_escape "$(broadcom_device_label)")" \
+            "$(package_installed broadcom-sta-dkms && echo true || echo false)"
+    fi
+    printf ']\n'
+}
+
+is_driver_package() {
+    case "$1" in
+        nvidia-driver|nvidia-tesla-[0-9]*-driver|nvidia-legacy-[0-9]*xx-driver|broadcom-sta-dkms)
+            return 0 ;;
+        *)
+            return 1 ;;
+    esac
+}
+
+cmd_install() {
+    local pkg="$1"
+    is_driver_package "$pkg" || { log "refusing to install unknown package: $pkg"; exit 1; }
+    apt-get update -qq
+    if ! package_installed "linux-headers-$(uname -r)"; then
+        apt-get install -y "linux-headers-$(uname -r)"
+    fi
+    apt-get install -y "$pkg"
+}
+
+cmd_remove() {
+    local pkg="$1"
+    is_driver_package "$pkg" || { log "refusing to remove unknown package: $pkg"; exit 1; }
+    package_installed "$pkg" || exit 0
+    apt-get purge -y "$pkg"
+}
+
+cmd_notify() {
+    mkdir -p "$STATE_DIR"
+    exec 9>"$LOCK"
+    flock -n 9 || exit 0
+    apt-get update -qq || exit 0
+
+    local nvidia_pkg
+    nvidia_pkg="$(nvidia_matching_package || true)"
+    if [ -n "$nvidia_pkg" ] && ! package_installed "$nvidia_pkg"; then
+        log "NVIDIA GPU detected, no driver installed"
+        su "$(logname 2>/dev/null || echo root)" -c \
+            'notify-send -a hyprvisor "Driver disponibil" "Deschide Additional Drivers ca sa instalezi driverul NVIDIA."' \
+            2>/dev/null || true
+    fi
+
+    if has_supported_broadcom && ! package_installed broadcom-sta-dkms; then
+        log "supported Broadcom Wi-Fi chip detected, no driver installed"
+        su "$(logname 2>/dev/null || echo root)" -c \
+            'notify-send -a hyprvisor "Driver disponibil" "Deschide Additional Drivers ca sa instalezi driverul Broadcom Wi-Fi."' \
+            2>/dev/null || true
+    fi
+}
+
+case "${1:-}" in
+    list-json) cmd_list_json ;;
+    install)   cmd_install "${2:?package name required}" ;;
+    remove)    cmd_remove "${2:?package name required}" ;;
+    notify)    cmd_notify ;;
+    *)
+        echo "usage: hyprvisor {list-json|install <package>|remove <package>|notify}" >&2
+        exit 1
+        ;;
+esac

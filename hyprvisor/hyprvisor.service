@@ -1,0 +1,11 @@
+[Unit]
+Description=pearOS hardware-driver detection
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/hyprvisor notify
+
+[Install]
+WantedBy=multi-user.target

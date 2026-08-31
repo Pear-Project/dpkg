@@ -1,51 +1,53 @@
 # Maintainer: Alexandru Balan <alxb421@gmail.com>
 pkgname=hyprvisor
 pkgver=26.8
-pkgrel=5
-pkgdesc="GPU driver manager CLI + GTK GUI for pearOS, wrapping ubuntu-drivers"
-arch=('amd64' 'arm64')
-url="https://github.com/alxb421/hyprvisor"
+pkgrel=7
+pkgdesc="Additional Drivers -- hardware driver detection and installer for pearOS"
+arch=('all')
+url="https://github.com/Pear-Project/dpkg"
 license="MIT"
 section="utils"
 priority="optional"
 maintainer="Alexandru Balan <alxb421@gmail.com>"
 
-builddepends=(
-    build-essential
-    cmake
-)
+builddepends=()
 
-# polkitd (not policykit-1): confirmed via a real install attempt that
-# policykit-1 has zero installable candidates on stock Debian -- it's the
-# old transitional package name, dropped there. polkitd is the modern name,
-# provides pkexec (used throughout driver_manager.cpp), and exists on both
-# Debian and Ubuntu/derivatives.
 depends=(
-    hwdata
     pciutils
+    polkitd
     python3
     python3-gi
     gir1.2-gtk-3.0
-    polkitd
-)
-
-# ubuntu-drivers-common is Ubuntu/derivatives-only -- confirmed absent from
-# stock Debian's own archive (apt-cache madison shows only archive.ubuntu.com
-# sources, no debian.org entry at all). Recommends instead of a hard depends
-# so the .deb still installs on stock Debian; driver_manager.cpp already
-# detects its absence at runtime and reports that clearly instead of the
-# misleading "nothing to install" message.
-recommends=(
-    ubuntu-drivers-common
+    libnotify-bin
 )
 
 build() {
-    cmake -S "$startdir" -B "$srcdir/build" \
-        -DCMAKE_BUILD_TYPE=Release
-    cmake --build "$srcdir/build" --parallel
+    :
 }
 
 package() {
-    install -Dm755 "$srcdir/build/hyprvisor" "$pkgdir/usr/local/bin/hyprvisor"
-    install -Dm755 "$startdir/gui/hyprvisor-gui.py" "$pkgdir/usr/local/bin/hyprvisor-gui"
+    install -Dm755 "$startdir/hyprvisor" "$pkgdir/usr/local/sbin/hyprvisor"
+    install -Dm755 "$startdir/hyprvisor-gui" "$pkgdir/usr/local/bin/hyprvisor-gui"
+    install -Dm644 "$startdir/hyprvisor-gui.desktop" "$pkgdir/usr/share/applications/hyprvisor-gui.desktop"
+    install -Dm644 "$startdir/hyprvisor.service" "$pkgdir/usr/lib/systemd/system/hyprvisor.service"
 }
+
+postinst="#!/bin/sh
+set -e
+case \"\$1\" in
+    configure)
+        systemctl enable hyprvisor.service || true
+        ;;
+esac
+exit 0
+"
+
+postrm="#!/bin/sh
+set -e
+case \"\$1\" in
+    remove)
+        systemctl disable hyprvisor.service || true
+        ;;
+esac
+exit 0
+"

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Additional Drivers
+Comment=Install proprietary hardware drivers
+Exec=/usr/local/bin/hyprvisor-gui
+Icon=preferences-system
+Terminal=false
+Categories=Settings;HardwareSettings;
