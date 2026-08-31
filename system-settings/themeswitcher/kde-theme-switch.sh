@@ -42,10 +42,10 @@ set_wallpaper_if_pearos() {
   local mode="$1"
   # Determine current wallpaper using Plasma config
   local current
-  current="$(grep "Image=" ~/.config/plasma-org.kde.plasma.desktop-appletsrc 2>/dev/null \
-    | grep -v "Image=true" \
+  current="$(grep "^Image=" ~/.config/plasma-org.kde.plasma.desktop-appletsrc 2>/dev/null \
+    | grep -v "^Image=true" \
     | sed 's/.*Image=//' \
-    | tail -n 1)"
+    | tail -n 1)" || true
   # Normalize file:// URIs to plain paths
   current="${current#file://}"
   msg "DEBUG wallpaper current: '${current}'"
@@ -71,13 +71,20 @@ set_wallpaper_if_pearos() {
       return 0
       ;;
   esac
-  msg "DEBUG mode: '$mode', target wallpaper: '$target'"
-  msg "DEBUG plasma-apply-wallpaperimage path: '$(command -v plasma-apply-wallpaperimage || echo NOT_FOUND)'"
-  if have plasma-apply-wallpaperimage; then
-    msg "Apply wallpaper: $target"
-    plasma-apply-wallpaperimage "$target" || true
+  msg "Apply wallpaper: $target"
+  # Same reasoning as apply_components: plasma-apply-wallpaperimage needs a
+  # live session to do anything, which isn't there yet on first apply. Edit
+  # every containment's Image= line directly instead - read fresh by Plasma
+  # on its next start either way.
+  local appletsrc="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
+  if [ -f "$appletsrc" ]; then
+    sed -i "s#^Image=file://.*#Image=file://$target#" "$appletsrc" || true
   else
-    msg "plasma-apply-wallpaperimage unavailable (skip wallpaper)"
+    msg "$appletsrc not found (skip wallpaper file edit)"
+  fi
+  # Best-effort live reload if a session happens to be up already.
+  if have plasma-apply-wallpaperimage; then
+    plasma-apply-wallpaperimage "$target" >/dev/null 2>&1 || true
   fi
 }
 
@@ -143,21 +150,61 @@ apply_kvantum_theme() {
   if [ -z "$theme" ]; then
     return 0
   fi
-  # Prefer kvantumctl (CLI, non-GUI)
-  if have kvantumctl; then
-    kvantumctl --set "$theme" >/dev/null 2>&1 || true
-    return 0
-  fi
-  # Write config file directly (no GUI)
+  # Write config file directly (kvantumctl needs a live session over D-Bus,
+  # which may not exist yet - same reasoning as apply_components below).
   mkdir -p "$HOME/.config/Kvantum"
   cat > "$HOME/.config/Kvantum/kvantum.kvconfig" <<EOF
 [General]
 theme=$theme
 EOF
-  # Attempt reload if kvantumctl is present
+  # Best-effort live reload if a session happens to be up already.
   if have kvantumctl; then
+    kvantumctl --set "$theme" >/dev/null 2>&1 || true
     kvantumctl --reload >/dev/null 2>&1 || true
   fi
+}
+
+apply_colorscheme_file() {
+  # Usage: apply_colorscheme_file <schemeName>
+  # plasma-apply-colorscheme's actual effect beyond the General/ColorScheme
+  # key: copy the [Colors:*] (+ WM/General) groups from the scheme's own
+  # .colors file into kdeglobals, so apps that read palette values straight
+  # out of kdeglobals (instead of resolving the named scheme at runtime)
+  # still pick up the right colors. Pure file edits - no D-Bus required.
+  local name="$1"
+  [ -z "$name" ] && return 0
+  if ! have python3; then
+    msg "python3 unavailable (skip Colors:* merge into kdeglobals)"
+    return 0
+  fi
+  local scheme_file=""
+  for d in "$HOME/.local/share/color-schemes" "/usr/share/color-schemes"; do
+    if [ -f "$d/$name.colors" ]; then
+      scheme_file="$d/$name.colors"
+      break
+    fi
+  done
+  if [ -z "$scheme_file" ]; then
+    msg "Color scheme file for '$name' not found (skip Colors:* merge)"
+    return 0
+  fi
+  python3 - "$scheme_file" <<'PY' || true
+import sys, subprocess, configparser
+
+scheme_file = sys.argv[1]
+cp = configparser.ConfigParser(interpolation=None)
+cp.optionxform = str
+cp.read(scheme_file, encoding="utf-8")
+
+for section in cp.sections():
+    if not (section.startswith("Colors:") or section in ("General", "WM")):
+        continue
+    for key, value in cp[section].items():
+        subprocess.run(
+            ["kwriteconfig6", "--file", "kdeglobals", "--group", section, "--key", key, value],
+            check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+PY
 }
 
 sanitize_kdedefaults_kwinrc() {
@@ -404,21 +451,29 @@ apply_components() {
     fi
   done
 
+  # Component application below writes config files directly instead of
+  # shelling out to plasma-apply-colorscheme/desktoptheme/cursortheme -
+  # those need a live Plasma session over D-Bus to do anything, which isn't
+  # available yet the first time this runs (post_setup, before the new
+  # user's first login). Direct writes work either way: read fresh by
+  # Plasma on its next start, or picked up live by qdbus reconfigure below
+  # when a session *is* already running (manual re-toggle from Settings).
   msg "Apply color scheme: $COLOR"
-  if have plasma-apply-colorscheme; then
-    plasma-apply-colorscheme "$COLOR" || true
+  if have kwriteconfig6; then
+    cfg_write kdeglobals General ColorScheme "$COLOR" || true
+    apply_colorscheme_file "$COLOR"
   else
-    msg "plasma-apply-colorscheme unavailable (skip)"
+    msg "kwriteconfig6 unavailable (skip color scheme)"
   fi
 
   # Adjust wallpaper only if current wallpaper is one of pearOS defaults
   set_wallpaper_if_pearos "$mode"
 
   msg "Apply Plasma desktop theme: $PTHM"
-  if have plasma-apply-desktoptheme; then
-    plasma-apply-desktoptheme "$PTHM" || true
+  if have kwriteconfig6; then
+    cfg_write plasmarc Theme name "$PTHM" || true
   else
-    msg "plasma-apply-desktoptheme unavailable (skip)"
+    msg "kwriteconfig6 unavailable (skip Plasma desktop theme)"
   fi
 
   msg "Set icon theme: $ITHM"
@@ -435,10 +490,12 @@ apply_components() {
   fi
 
   msg "Apply cursor theme: $CTHM"
-  if have plasma-apply-cursortheme; then
-    plasma-apply-cursortheme "$CTHM" || true
+  if have kwriteconfig6; then
+    cfg_write kcminputrc Mouse cursorTheme "$CTHM" || true
+    mkdir -p "$HOME/.icons/default"
+    printf '[Icon Theme]\nInherits=%s\n' "$CTHM" > "$HOME/.icons/default/index.theme" || true
   else
-    msg "plasma-apply-cursortheme unavailable (skip)"
+    msg "kwriteconfig6 unavailable (skip cursor theme)"
   fi
 
   # Application Style (Qt widget style)
