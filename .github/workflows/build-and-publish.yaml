@@ -126,7 +126,7 @@ jobs:
         pkgdir: ${{ fromJson(needs.detect-changes.outputs.dirs_amd64) }}
 
     container:
-      image: debian:testing
+      image: ubuntu:24.04
 
     steps:
       # actions/checkout needs `git` in the container before it can run.
@@ -148,6 +148,22 @@ jobs:
           repository: Pear-Project/debian-package-repo
           path: debian-package-repo
           token: ${{ secrets.DEBIAN_REPO_DEPLOY_TOKEN }}
+
+      # pearOS's real target is KDE neon Unstable Edition (Ubuntu 24.04),
+      # and its kwin-wayland/kwin-dev come from neon's own unstable repo
+      # (continuous git builds), not from Ubuntu or Debian. A kwin effect
+      # plugin's Qt plugin IID bakes in KWIN_PLUGIN_VERSION_STRING from
+      # whatever kwin-dev built it, so building against the wrong kwin-dev
+      # produces a .so that compiles fine but KWin silently refuses to
+      # load on a real pearOS system. Match the real base exactly.
+      - name: Add KDE neon unstable apt repo (matches pearOS's real KWin ABI)
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates gnupg wget
+          mkdir -p /etc/apt/keyrings
+          wget -qO- https://origin.archive.neon.kde.org/public.key | gpg --dearmor -o /etc/apt/keyrings/neon-archive-keyring.gpg
+          echo "deb [signed-by=/etc/apt/keyrings/neon-archive-keyring.gpg] http://archive.neon.kde.org/unstable noble main" > /etc/apt/sources.list.d/neon.list
+          apt-get update
 
       - name: Install build tools
         run: |
@@ -203,7 +219,7 @@ jobs:
         pkgdir: ${{ fromJson(needs.detect-changes.outputs.dirs_arm64) }}
 
     container:
-      image: debian:testing
+      image: ubuntu:24.04
 
     steps:
       - name: Install git (required before checkout works in-container)
@@ -220,6 +236,19 @@ jobs:
           repository: Pear-Project/debian-package-repo
           path: debian-package-repo
           token: ${{ secrets.DEBIAN_REPO_DEPLOY_TOKEN }}
+
+      # See the amd64 job for why: pearOS's real kwin-dev comes from KDE
+      # neon's unstable repo, not Ubuntu/Debian, and a kwin effect plugin's
+      # embedded Qt IID must match it exactly or KWin refuses to load the
+      # plugin on the real target even though it built cleanly.
+      - name: Add KDE neon unstable apt repo (matches pearOS's real KWin ABI)
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates gnupg wget
+          mkdir -p /etc/apt/keyrings
+          wget -qO- https://origin.archive.neon.kde.org/public.key | gpg --dearmor -o /etc/apt/keyrings/neon-archive-keyring.gpg
+          echo "deb [signed-by=/etc/apt/keyrings/neon-archive-keyring.gpg] http://archive.neon.kde.org/unstable noble main" > /etc/apt/sources.list.d/neon.list
+          apt-get update
 
       - name: Install build tools
         run: |
