@@ -125,8 +125,19 @@ jobs:
       matrix:
         pkgdir: ${{ fromJson(needs.detect-changes.outputs.dirs_amd64) }}
 
+    # pearOS's actual shipped target is deb-iso's rootfs: Debian forky
+    # (pinned explicitly, not the "testing" moving tag - forky stops being
+    # testing once it releases) plus apt.pearos.xyz, with kwin-common
+    # coming straight from Debian, not from KDE neon. A kwin effect
+    # plugin's Qt plugin IID bakes in KWIN_PLUGIN_VERSION_STRING from
+    # whatever kwin-dev built it, so this has to match the ISO's kwin-dev
+    # exactly or the plugin installs but KWin refuses to load it there.
+    # (KDE neon unstable - what this repo's own dev desktop happens to run -
+    # was tried here and reverted: neon rebuilds its KWin packages several
+    # times a day, so a CI-published .deb pinned to it goes stale again
+    # within days. Not worth chasing for an unshipped dev box.)
     container:
-      image: ubuntu:24.04
+      image: debian:forky
 
     steps:
       # actions/checkout needs `git` in the container before it can run.
@@ -148,22 +159,6 @@ jobs:
           repository: Pear-Project/debian-package-repo
           path: debian-package-repo
           token: ${{ secrets.DEBIAN_REPO_DEPLOY_TOKEN }}
-
-      # pearOS's real target is KDE neon Unstable Edition (Ubuntu 24.04),
-      # and its kwin-wayland/kwin-dev come from neon's own unstable repo
-      # (continuous git builds), not from Ubuntu or Debian. A kwin effect
-      # plugin's Qt plugin IID bakes in KWIN_PLUGIN_VERSION_STRING from
-      # whatever kwin-dev built it, so building against the wrong kwin-dev
-      # produces a .so that compiles fine but KWin silently refuses to
-      # load on a real pearOS system. Match the real base exactly.
-      - name: Add KDE neon unstable apt repo (matches pearOS's real KWin ABI)
-        run: |
-          apt-get update
-          apt-get install -y --no-install-recommends ca-certificates gnupg wget
-          mkdir -p /etc/apt/keyrings
-          wget -qO- https://origin.archive.neon.kde.org/public.key | gpg --dearmor -o /etc/apt/keyrings/neon-archive-keyring.gpg
-          echo "deb [signed-by=/etc/apt/keyrings/neon-archive-keyring.gpg] http://archive.neon.kde.org/unstable noble main" > /etc/apt/sources.list.d/neon.list
-          apt-get update
 
       - name: Install build tools
         run: |
@@ -218,16 +213,14 @@ jobs:
       matrix:
         pkgdir: ${{ fromJson(needs.detect-changes.outputs.dirs_arm64) }}
 
-    # KDE neon (used on amd64, see that job) has never published an arm64
-    # track - archive.neon.kde.org/unstable's arm64 Packages index doesn't
-    # carry kwin-dev or libkdecorations3-dev at all. Left on debian:testing
-    # here, same as before this fix: it does have both packages, matching
-    # the state the arm64 job was already in before this change. Whether
-    # that's the correct KWin ABI for real arm64 pearOS devices is still
-    # unverified - unlike amd64, there's no known-good arm64 pearOS
-    # machine this was cross-checked against.
+    # Same reasoning as the amd64 job: pin the exact Debian release
+    # deb-iso's rootfs targets (forky) instead of the "testing" moving
+    # tag, so kwin-dev here matches what an arm64 pearOS install would
+    # actually get from Debian. (No arm64 deb-iso rootfs profile exists
+    # in this repo to cross-check against, unlike amd64 - if pearOS ships
+    # an arm64 image from a different base, this may need revisiting.)
     container:
-      image: debian:testing
+      image: debian:forky
 
     steps:
       - name: Install git (required before checkout works in-container)
