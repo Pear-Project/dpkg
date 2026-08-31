@@ -7,7 +7,7 @@ uniform float opacity;
 
 vec4 roundedRectangle(vec2 fragCoord, vec3 texture)
 {
-    if (topCornerRadius == 0 && bottomCornerRadius == 0) {
+    if (topCornerRadius == 0.0 && bottomCornerRadius == 0.0) {
         return vec4(texture, opacity);
     }
 

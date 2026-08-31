@@ -59,8 +59,8 @@ BlurEffect::BlurEffect()
     ensureResources();
 
     m_downsamplePass.shader = ShaderManager::instance()->generateShaderFromFile(ShaderTrait::MapTexture,
-                                                                                QStringLiteral(":/effects/forceblur/shaders/vertex.vert"),
-                                                                                QStringLiteral(":/effects/forceblur/shaders/downsample.frag"));
+                                                                                QStringLiteral(":/effects/forceblur/shaders/vertex_core.vert"),
+                                                                                QStringLiteral(":/effects/forceblur/shaders/downsample_core.frag"));
     if (!m_downsamplePass.shader) {
         qCWarning(KWIN_BLUR) << "Failed to load downsampling pass shader";
         return;
@@ -73,8 +73,8 @@ BlurEffect::BlurEffect()
     }
 
     m_upsamplePass.shader = ShaderManager::instance()->generateShaderFromFile(ShaderTrait::MapTexture,
-                                                                              QStringLiteral(":/effects/forceblur/shaders/vertex.vert"),
-                                                                              QStringLiteral(":/effects/forceblur/shaders/upsample.frag"));
+                                                                              QStringLiteral(":/effects/forceblur/shaders/vertex_core.vert"),
+                                                                              QStringLiteral(":/effects/forceblur/shaders/upsample_core.frag"));
     if (!m_upsamplePass.shader) {
         qCWarning(KWIN_BLUR) << "Failed to load upsampling pass shader";
         return;
@@ -99,8 +99,8 @@ BlurEffect::BlurEffect()
     }
 
     m_texture.shader = ShaderManager::instance()->generateShaderFromFile(ShaderTrait::MapTexture,
-                                                                         QStringLiteral(":/effects/forceblur/shaders/vertex.vert"),
-                                                                         QStringLiteral(":/effects/forceblur/shaders/texture.frag"));
+                                                                         QStringLiteral(":/effects/forceblur/shaders/vertex_core.vert"),
+                                                                         QStringLiteral(":/effects/forceblur/shaders/texture_core.frag"));
     if (!m_texture.shader) {
         qCWarning(KWIN_BLUR) << "Failed to load texture pass shader";
         return;

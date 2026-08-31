@@ -69,7 +69,7 @@ void main(void)
     float weightSum = 12.0;
     vec4 sum = vec4(0, 0, 0, 0);
 
-    if (refractionStrength > 0) {
+    if (refractionStrength > 0.0) {
         vec2 halfBlurSize = 0.5 * blurSize;
         vec2 position = uv * blurSize - halfBlurSize.xy;
         float dist = roundedRectangleDist(position, halfBlurSize, edgeSizePixels);

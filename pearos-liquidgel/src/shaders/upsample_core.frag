@@ -9,7 +9,7 @@ uniform float opacity;
 
 vec4 roundedRectangle(vec2 fragCoord, vec3 texture)
 {
-    if (topCornerRadius == 0 && bottomCornerRadius == 0) {
+    if (topCornerRadius == 0.0 && bottomCornerRadius == 0.0) {
         return vec4(texture, opacity);
     }
 
@@ -99,7 +99,7 @@ void main(void)
     float weightSum = 12.0;
     vec4 sum = vec4(0, 0, 0, 0);
 
-    if (refractionStrength > 0) {
+    if (refractionStrength > 0.0) {
         vec2 halfBlurSize = 0.5 * blurSize;
         vec2 position = uv * blurSize - halfBlurSize.xy;
         float dist = roundedRectangleDist(position, halfBlurSize, edgeSizePixels);
