@@ -45,6 +45,7 @@ GridLayout {
     }
     CItem {length: cfg.midSpace}
     CItem{
+        id: titleItem
         length : {
             if(cfg.lengthKind == 0) {
                 if (showButtons) return labelPlain.implicitWidth // buttonsRow.implicitWidth
@@ -67,7 +68,7 @@ GridLayout {
         // Use Text for HTML support, Label otherwise
         Text {
             id                      : label
-            visible                 : hasHtml && !showButtons
+            visible                 : titleItem.hasHtml && !titleItem.showButtons
             verticalAlignment       : Text.AlignVCenter
             text                    : root.text
             textFormat              : Text.RichText
@@ -89,7 +90,7 @@ GridLayout {
         }
         PlasmaComponents.Label {
             id                      : labelPlain
-            visible                 : !hasHtml && !showButtons
+            visible                 : !titleItem.hasHtml && !titleItem.showButtons
             verticalAlignment       : Text.AlignVCenter
             text                    : root.text
             color                   : Kirigami.Theme.textColor

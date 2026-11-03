@@ -109,7 +109,11 @@ PlasmoidItem {
         || Plasmoid.location === PlasmaCore.Types.BottomEdge
         || Plasmoid.location === PlasmaCore.Types.LeftEdge)
 
-    property int plasmaVersion
+    // Minor version of plasmashell. It is read asynchronously below (`plasmashell -v`), and the
+    // pages build their Battery/NightLight controls from it as soon as they load: with 0 they took
+    // the pre-6.3 API (PowerManagementControl, ...) that no longer exists and failed. Assume a
+    // current Plasma until the real number arrives.
+    property int plasmaVersion: 99
 
     Plasma5Support.DataSource {
         id: executable
